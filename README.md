@@ -267,3 +267,36 @@ Target Prize: 1st Place Track 2 ($10,000) + Best Technical Implementation ($2,00
 Post-Hackathon: Launch B2B SaaS for advisors; expand to B2C retail investors
 Ready to ship. Ready to win. Let's build.
 PRD Version: 2.0 (H0 Hackathon Compliant) | Updated: June 2026
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Use an AWS frontend service (covers hackathon requirements) and the Gemini API — it's free with no credit card required and allows easy model upgrades without rewriting code.
+Tech Stack
+
+Frontend: Next.js
+Backend: FastAPI (Python) — works seamlessly with databases via Pydantic schemas
+Email/Notifications: Resend — 2,000 free emails/month
+
+Deployment
+We won't deploy during the hackathon. We already pay for Railway (frontend, backend, and database), so we'll use AWS for the hackathon frontend. If anyone has AWS expertise, please share — otherwise I can assist. Feel free to message me.
+Design
+We need someone dedicated to Figma designs to keep the project visually appealing.
+Features in Progress
+And the things kirill and me are going to handle are the following
+Payment gateway integration and testing
+Accounting, business processing, and LLC business registration
+PolyTICK database advisor (investment recommendations)
+Demo videos, SEO optimization, and blog writing
+
+
+Use authentication and authorization same as claude once
+
+
+Muqadas2     (stitch authentication and authorization as same on claude website)
+
+AbdullahKhetran ( SSG/ ISR, reduce size of images, Schemas for every single, Blog page and creating seo optimized Blogs, BreadCrumb Structure and Coming up with titles and meta descriptions)
+
+Saharsh - Slygriyrsk    (Backend + plaid)
+
+aronstudy07   (stitch)
+
+Syed - https://github.com/24pwai0032-gif      (frontend + backend + database + plaid

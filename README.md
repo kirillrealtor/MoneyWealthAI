@@ -299,4 +299,4 @@ Saharsh - Slygriyrsk    (Backend + plaid)
 
 aronstudy07   (stitch)
 
-Syed - https://github.com/24pwai0032-gif      (frontend + backend + database + plaid
+Syed - https://github.com/24pwai0032-gif      (frontend + backend + database + plaid)

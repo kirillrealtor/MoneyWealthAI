@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+**/.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Node / frontend (future)
+node_modules/
+.next/
+dist/
+
+# Env & secrets
+.env
+**/.env
+.env.local
+
+# Misc
+*.log
+.DS_Store
+*.txt.cookie

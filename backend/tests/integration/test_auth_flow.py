@@ -57,3 +57,20 @@ async def test_validation_error_shape(client: httpx.AsyncClient) -> None:
     body = r.json()
     assert body["code"] == "VALIDATION_ERROR"
     assert "request_id" in body
+
+
+async def test_validation_error_does_not_leak_password(client: httpx.AsyncClient) -> None:
+    secret = "superSecretPasswordThatMustNotBeEchoed"
+    r = await client.post("/api/v1/auth/signup", json={"email": "x@y.com", "password": secret[:3]})
+    # Too-short password fails validation; the raw input must NOT appear anywhere.
+    assert r.status_code == 422
+    assert secret[:3] not in r.text
+    assert "input" not in r.text  # the leaky Pydantic field is stripped
+
+
+async def test_extra_fields_rejected(client: httpx.AsyncClient) -> None:
+    r = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "x@y.com", "password": "whatever123", "is_admin": True},
+    )
+    assert r.status_code == 422  # extra="forbid" rejects unexpected fields

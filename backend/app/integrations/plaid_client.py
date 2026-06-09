@@ -118,8 +118,10 @@ def _safe_error(resp: httpx.Response) -> dict[str, Any]:
 
 
 def get_plaid() -> PlaidClient:
-    """Construct a client or raise a clean 503 if Plaid isn't configured."""
+    """Construct a client or raise a generic error if Plaid isn't configured.
+    The 'not configured' detail is logged, not returned (don't disclose env state)."""
     try:
         return PlaidClient()
     except PlaidNotConfigured as err:
-        raise ApiError("PLAID_ERROR", details={"reason": "Plaid is not configured on this environment."}) from err
+        logger.error("plaid not configured", service="plaid")
+        raise ApiError("PLAID_ERROR") from err

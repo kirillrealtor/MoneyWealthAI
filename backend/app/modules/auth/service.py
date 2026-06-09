@@ -22,7 +22,9 @@ from app.redis_client import redis_client
 from .mailer import build_verification_email, send_mail
 from .tokens import (
     find_live_session,
+    find_session_including_revoked,
     issue_refresh_token,
+    revoke_all_sessions,
     revoke_session,
     rotate_refresh_token,
     sign_access_token,
@@ -227,6 +229,19 @@ async def login(
 async def refresh(raw_refresh_token: str, ctx: AuthCtx) -> TokenPair:
     session = await find_live_session(raw_refresh_token)
     if not session:
+        # Reuse detection: if this token exists but was already revoked, it was
+        # rotated away — a replay of an old token signals theft. Revoke the
+        # whole family so neither attacker nor victim keeps a usable session.
+        stale = await find_session_including_revoked(raw_refresh_token)
+        if stale and stale["revoked_at"] is not None:
+            await revoke_all_sessions(str(stale["user_id"]))
+            await audit(
+                "session.reuse_detected",
+                user_id=str(stale["user_id"]),
+                tenant_id=str(stale["tenant_id"]),
+                resource="session",
+                ip_address=ctx.ip,
+            )
         raise ApiError("UNAUTHORIZED", message="Invalid or expired session.")
 
     tenant = str(session["tenant_id"])

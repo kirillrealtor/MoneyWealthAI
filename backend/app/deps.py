@@ -86,7 +86,17 @@ def rate_limit(bucket: str, limit_per_min: int) -> Callable[[Request], Awaitable
     """
 
     async def _dep(request: Request) -> None:
-        identifier = request.headers.get("authorization") or (request.client.host if request.client else "anon")
+        # Key by stable user id when authenticated (the JWT string rotates every
+        # ~15 min, which would otherwise reset the user's limit on each refresh);
+        # fall back to client IP for unauthenticated routes.
+        auth = request.headers.get("authorization")
+        if auth and auth.startswith("Bearer "):
+            try:
+                identifier = "u:" + verify_access_token(auth[len("Bearer "):])["sub"]
+            except Exception:  # noqa: BLE001 - invalid token; key by the token itself
+                identifier = "t:" + auth
+        else:
+            identifier = "ip:" + (request.client.host if request.client else "anon")
         window = int(time.time() // 60)
         # stable_bucket (SHA-256) instead of builtin hash() so the key is the
         # same across all instances/processes — required for a shared limit.

@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LinkTokenResponse(BaseModel):
@@ -13,6 +13,8 @@ class LinkTokenResponse(BaseModel):
 
 
 class ExchangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     public_token: str = Field(min_length=1, max_length=500)
 
 

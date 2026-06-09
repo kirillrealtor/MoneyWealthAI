@@ -13,7 +13,8 @@ build order in [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md).
 - ✅ **Phase 1** — auth (signup, email verify, login, JWT + rotating refresh, sessions), tenancy, rate limiting, audit log
 - ✅ **Phase 1 hardening** — enforced RLS (non-owner role + FORCE RLS), brute-force throttle, anti-enumeration, bcrypt pre-hash, security headers, trusted-host, body limits, captcha, integration + RLS tests. See [docs/SECURITY.md](docs/SECURITY.md).
 - ✅ **Phase 2** — Plaid data layer: link/exchange/disconnect, **encrypted access tokens (AES-256-GCM)**, idempotent transaction sync, **verified webhooks**, tenant RLS on all Plaid tables. Live calls need Plaid keys — see [docs/PHASE2_PENDING.md](docs/PHASE2_PENDING.md).
-- ⏭️ **Phase 3** — AI core (agentic loop, MCP tools, evals)
+- ✅ **Phase 3** — AI advisor core: grounded **agentic loop** (Claude **or** Groq) + MCP tools (tenant-scoped, **FORCE RLS**), input safety (injection/crisis/jailbreak), output validation, **atomic** per-tier token budgets, **evals harness** (`python -m scripts.run_evals`). Live calls need `ANTHROPIC_API_KEY` or `GROQ_API_KEY` — see [docs/PHASE3_PENDING.md](docs/PHASE3_PENDING.md).
+- ⏭️ **Phase 4** — planning modules (budgets, goals, debt, portfolio) + remaining MCP tools
 
 ## Quick start (local)
 

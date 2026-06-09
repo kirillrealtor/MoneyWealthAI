@@ -1,10 +1,12 @@
 """Pydantic request/response models for the auth API."""
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class SignupRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")  # reject unexpected fields
+
     email: EmailStr
     password: str = Field(min_length=8, max_length=200)
     full_name: str | None = Field(default=None, max_length=255)
@@ -18,6 +20,8 @@ class SignupResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     password: str = Field(min_length=1, max_length=200)
     # Required only as a step-up after repeated login failures.

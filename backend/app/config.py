@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     access_token_ttl: int = 900
     refresh_token_ttl: int = 2_592_000
     bcrypt_rounds: int = Field(default=12, ge=10, le=15)
+    jwt_issuer: str = "financial-advisor"
+    jwt_audience: str = "financial-advisor-api"
 
     app_base_url: str = "http://localhost:3000"
     cookie_domain: str = "localhost"
@@ -70,9 +72,51 @@ class Settings(BaseSettings):
     plaid_enc_key: str | None = None
     plaid_enc_key_version: int = 1
 
+    # ---- AI advisor ----
+    # Provider selection: 'auto' prefers Claude, falls back to Groq if only Groq
+    # is configured. Set 'groq' to force the free/cheap path; 'claude' to force Claude.
+    advisor_provider: Literal["auto", "claude", "groq"] = "auto"
+    anthropic_api_key: str | None = None
+    # Groq (OpenAI-compatible, free tier) — good for dev/load-testing the plumbing.
+    # NOTE: open models are weaker at compliance framing; run evals before trusting
+    # them as the production advisor brain (see docs/PHASE3_PENDING.md).
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+    # Default to Opus 4.8 for financial-reasoning quality. At high volume, set
+    # ADVISOR_MODEL=claude-sonnet-4-6 to cut cost (~$3/$15 vs $5/$25 per 1M).
+    advisor_model: str = "claude-opus-4-8"
+    classifier_model: str = "claude-haiku-4-5"  # cheap model for jailbreak checks
+    advisor_max_tokens: int = 1500
+    advisor_max_tool_rounds: int = 5            # cap agentic loop (cost/runaway guard)
+    advisor_history_turns: int = 10             # chat turns loaded for context
+    advisor_thinking: bool = False              # adaptive thinking off by default (latency/cost)
+    # Per-tier daily token budgets (input+output) enforced before each turn.
+    token_budget_free: int = 10_000
+    token_budget_plus: int = 100_000
+    token_budget_premium: int = 500_000
+
     @property
     def plaid_configured(self) -> bool:
         return bool(self.plaid_client_id and self.plaid_secret and self.plaid_enc_key)
+
+    @property
+    def anthropic_configured(self) -> bool:
+        return bool(self.anthropic_api_key)
+
+    @property
+    def groq_configured(self) -> bool:
+        return bool(self.groq_api_key)
+
+    @property
+    def ai_configured(self) -> bool:
+        return self.anthropic_configured or self.groq_configured
+
+    def token_budget_for(self, tier: str) -> int:
+        return {
+            "free": self.token_budget_free,
+            "plus": self.token_budget_plus,
+            "premium": self.token_budget_premium,
+        }.get(tier, self.token_budget_free)
 
     @property
     def plaid_base_url(self) -> str:

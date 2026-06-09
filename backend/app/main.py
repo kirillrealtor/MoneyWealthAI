@@ -13,6 +13,7 @@ from app.db import close_pool, init_pool
 from app.errors import register_exception_handlers
 from app.logging_conf import configure_logging, logger
 from app.middleware import SecurityMiddleware, TracingMiddleware
+from app.modules.advisor.router import router as advisor_router
 from app.modules.auth.router import router as auth_router
 from app.modules.health.router import router as health_router
 from app.modules.plaid.router import router as plaid_router
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(plaid_router)
     app.include_router(plaid_webhook_router)
+    app.include_router(advisor_router)
     return app
 
 

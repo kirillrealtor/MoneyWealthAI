@@ -22,6 +22,7 @@ API_ERRORS: dict[str, dict[str, Any]] = {
     "PAYLOAD_TOO_LARGE": {"status": 413, "message": "Request body exceeds the maximum allowed size."},
     "RATE_LIMITED": {"status": 429, "message": "Too many requests. See Retry-After header."},
     "AI_UNAVAILABLE": {"status": 503, "message": "AI provider temporarily unavailable. Retry in 60s."},
+    "SERVICE_BUSY": {"status": 503, "message": "Service is busy. Please retry shortly."},
     "PLAID_ERROR": {"status": 502, "message": "Banking data provider returned an error."},
     "INTERNAL_ERROR": {"status": 500, "message": "An unexpected error occurred. Reference request_id in support."},
 }

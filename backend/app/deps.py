@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 import jwt
 from fastapi import Depends, Request
@@ -25,13 +26,27 @@ class CurrentUser:
     tier: str
 
 
+def _decode_access(request: Request, token: str) -> dict[str, Any]:
+    """Verify the access token once per request and memoize the claims on
+    request.state. Both the rate limiter and require_auth need the decoded
+    token; without this the JWT signature would be verified twice per authed
+    request. Raises jwt.PyJWTError on an invalid token (callers handle it).
+    """
+    cached = getattr(request.state, "access_claims", None)
+    if cached is not None:
+        return cast("dict[str, Any]", cached)
+    claims = verify_access_token(token)
+    request.state.access_claims = claims
+    return claims
+
+
 async def require_auth(request: Request) -> CurrentUser:
     """Validate the Bearer access token (stateless) and enrich request context."""
     header = request.headers.get("authorization")
     if not header or not header.startswith("Bearer "):
         raise ApiError("UNAUTHORIZED")
     try:
-        claims = verify_access_token(header[len("Bearer "):])
+        claims = _decode_access(request, header[len("Bearer "):])
     except jwt.PyJWTError as err:
         raise ApiError("UNAUTHORIZED") from err
 
@@ -92,7 +107,7 @@ def rate_limit(bucket: str, limit_per_min: int) -> Callable[[Request], Awaitable
         auth = request.headers.get("authorization")
         if auth and auth.startswith("Bearer "):
             try:
-                identifier = "u:" + verify_access_token(auth[len("Bearer "):])["sub"]
+                identifier = "u:" + str(_decode_access(request, auth[len("Bearer "):])["sub"])
             except Exception:  # noqa: BLE001 - invalid token; key by the token itself
                 identifier = "t:" + auth
         else:

@@ -29,9 +29,12 @@ Legend: 🔑 key/account · ⚙️ config/infra · 🧩 small code
 - ⚙️ One-click email **unsubscribe** (signed token) for CAN-SPAM before sending marketing/digest.
 
 ## Deferred to Phase 6 (infra) / later
-- ⚙️ **Scheduler + SQS fan-out** — `run_alerts` is a cron loop today; production fans
-  per-user/batch work to an **SQS worker fleet** (EventBridge schedule). `run_alerts_for_user`
-  is already the unit of work, so it's a transport swap, not a rewrite.
+- ⚙️ **Scheduler + SQS fan-out** — ⚠️ **the one known 1M-scale gap.** `run_alerts` is a
+  single-process cron loop today (`for user in users: await run_alerts_for_user(...)`,
+  ~8 queries/user) — O(users) sequential, so at 1M it can't finish inside a daily window.
+  Production fans per-user work to an **SQS worker fleet** (EventBridge schedule).
+  `run_alerts_for_user` is already the idempotent unit of work, so it's a transport swap,
+  not a rewrite. (Request-serving paths are unaffected — this is the batch layer only.)
 - ⚙️ **Outbox retry worker** — a worker that re-attempts `status='failed'` rows with backoff
   (the table + index `idx_outbox_pending` are in place).
 - 🧩 **Weekly digest** (`scripts/run_digest`) — Sunday email: net worth, spend, goal progress,

@@ -95,36 +95,45 @@ async def exchange_public_token(user_id: str, tenant_id: str, public_token: str,
 
 
 async def list_items(user_id: str, tenant_id: str) -> list[dict[str, Any]]:
+    # Single query (LEFT JOIN) instead of N+1 (one accounts fetch per item):
+    # items and their accounts come back in one round-trip, then grouped in-app.
+    # ORDER BY keeps items newest-first and accounts stable within each item.
     async with db.with_tenant(tenant_id) as conn:
-        items = await conn.fetch(
-            """SELECT item_id, institution_name, item_status, last_sync_at
-                 FROM plaid_items WHERE user_id = $1 ORDER BY created_at DESC""",
+        rows = await conn.fetch(
+            """SELECT i.item_id, i.institution_name, i.item_status, i.last_sync_at,
+                      a.account_id, a.name AS account_name, a.type AS account_type,
+                      a.subtype, a.balance_current, a.currency_code
+                 FROM plaid_items i
+                 LEFT JOIN plaid_accounts a ON a.item_id = i.item_id
+                WHERE i.user_id = $1
+                ORDER BY i.created_at DESC, a.created_at""",
             user_id,
         )
-        result: list[dict[str, Any]] = []
-        for it in items:
-            accs = await conn.fetch(
-                """SELECT account_id, name, type, subtype, balance_current, currency_code
-                     FROM plaid_accounts WHERE item_id = $1 ORDER BY created_at""",
-                it["item_id"],
-            )
-            result.append(
+
+    result: list[dict[str, Any]] = []
+    by_item: dict[Any, dict[str, Any]] = {}
+    for r in rows:
+        item = by_item.get(r["item_id"])
+        if item is None:
+            item = {
+                "item_id": str(r["item_id"]),
+                "institution_name": r["institution_name"],
+                "item_status": r["item_status"],
+                "last_sync_at": r["last_sync_at"],
+                "accounts": [],
+            }
+            by_item[r["item_id"]] = item
+            result.append(item)
+        # LEFT JOIN yields a null account row for items with no accounts yet.
+        if r["account_id"] is not None:
+            item["accounts"].append(
                 {
-                    "item_id": str(it["item_id"]),
-                    "institution_name": it["institution_name"],
-                    "item_status": it["item_status"],
-                    "last_sync_at": it["last_sync_at"],
-                    "accounts": [
-                        {
-                            "account_id": str(a["account_id"]),
-                            "name": a["name"],
-                            "type": a["type"],
-                            "subtype": a["subtype"],
-                            "balance_current": a["balance_current"],
-                            "currency_code": a["currency_code"],
-                        }
-                        for a in accs
-                    ],
+                    "account_id": str(r["account_id"]),
+                    "name": r["account_name"],
+                    "type": r["account_type"],
+                    "subtype": r["subtype"],
+                    "balance_current": r["balance_current"],
+                    "currency_code": r["currency_code"],
                 }
             )
     return result

@@ -16,9 +16,17 @@ from typing import Any, cast
 import asyncpg
 
 from app.config import settings
+from app.errors import ApiError
 from app.logging_conf import logger
 
 _pool: asyncpg.Pool | None = None
+
+# Max time a request will wait for a free pooled connection before giving up.
+# Without this, a concurrency spike (more in-flight requests than connections)
+# makes callers wait *indefinitely* on pool.acquire() — requests pile up, memory
+# grows, and the instance OOMs. Failing fast with a 503 sheds load instead, so a
+# burst degrades gracefully (and the load balancer can retry elsewhere).
+_POOL_ACQUIRE_TIMEOUT = 5.0
 
 
 def _normalize_dsn(url: str) -> str:
@@ -53,12 +61,35 @@ def _require_pool() -> asyncpg.Pool:
     return _pool
 
 
+@asynccontextmanager
+async def _acquire() -> AsyncIterator[asyncpg.Connection]:
+    """Acquire a pooled connection, but never wait longer than
+    _POOL_ACQUIRE_TIMEOUT. On timeout, raise a clean 503 (SERVICE_BUSY) so the
+    request sheds instead of hanging and exhausting the event loop / memory.
+    """
+    pool = _require_pool()
+    try:
+        # asyncpg raises asyncio.TimeoutError (an alias of builtin TimeoutError on
+        # 3.11+) if no connection frees up within the timeout.
+        conn = await pool.acquire(timeout=_POOL_ACQUIRE_TIMEOUT)
+    except TimeoutError as err:
+        logger.error("db pool acquire timeout", service="database", error_type="POOL_EXHAUSTED")
+        raise ApiError("SERVICE_BUSY") from err
+    try:
+        yield conn
+    finally:
+        await pool.release(conn)
+
+
 async def execute(sql: str, *params: Any) -> str:
     start = time.monotonic()
     try:
-        result = await _require_pool().execute(sql, *params)
+        async with _acquire() as conn:
+            result = await conn.execute(sql, *params)
         logger.debug("db execute", service="database", latency_ms=_ms(start))
         return cast(str, result)
+    except ApiError:
+        raise
     except Exception as err:  # noqa: BLE001 - logged and re-raised
         logger.error("db execute failed", service="database", error_type="DB_QUERY_FAILED", error_message=str(err))
         raise
@@ -67,9 +98,12 @@ async def execute(sql: str, *params: Any) -> str:
 async def fetch(sql: str, *params: Any) -> list[asyncpg.Record]:
     start = time.monotonic()
     try:
-        rows = await _require_pool().fetch(sql, *params)
+        async with _acquire() as conn:
+            rows = await conn.fetch(sql, *params)
         logger.debug("db fetch", service="database", latency_ms=_ms(start), rows=len(rows))
         return cast("list[asyncpg.Record]", rows)
+    except ApiError:
+        raise
     except Exception as err:  # noqa: BLE001
         logger.error("db fetch failed", service="database", error_type="DB_QUERY_FAILED", error_message=str(err))
         raise
@@ -78,16 +112,20 @@ async def fetch(sql: str, *params: Any) -> list[asyncpg.Record]:
 async def fetchrow(sql: str, *params: Any) -> asyncpg.Record | None:
     start = time.monotonic()
     try:
-        row = await _require_pool().fetchrow(sql, *params)
+        async with _acquire() as conn:
+            row = await conn.fetchrow(sql, *params)
         logger.debug("db fetchrow", service="database", latency_ms=_ms(start))
         return row
+    except ApiError:
+        raise
     except Exception as err:  # noqa: BLE001
         logger.error("db fetchrow failed", service="database", error_type="DB_QUERY_FAILED", error_message=str(err))
         raise
 
 
 async def fetchval(sql: str, *params: Any) -> Any:
-    return await _require_pool().fetchval(sql, *params)
+    async with _acquire() as conn:
+        return await conn.fetchval(sql, *params)
 
 
 @asynccontextmanager
@@ -95,9 +133,11 @@ async def with_tenant(tenant_id: str) -> AsyncIterator[asyncpg.Connection]:
     """Yield a connection inside a transaction with the tenant context set, so
     Row-Level Security policies apply (Architecture 6 / schema RLS). The
     set_config(..., true) makes it transaction-local - safe with pooling.
+
+    Acquisition is bounded (see _acquire): under pool exhaustion this raises a
+    clean 503 rather than blocking the caller indefinitely.
     """
-    pool = _require_pool()
-    async with pool.acquire() as conn:
+    async with _acquire() as conn:
         async with conn.transaction():
             await conn.execute("SELECT set_config('app.current_tenant_id', $1, true)", tenant_id)
             yield conn

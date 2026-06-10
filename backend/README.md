@@ -18,6 +18,7 @@ build order in [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md).
 - ✅ **Phase 4B** — Debt dashboard (summary, DTI, payoff-at-minimum, refinance flags, snowball/avalanche what-if) + Portfolio dashboard (allocation, sector exposure, concentration flags, unrealized P/L, rebalance gaps) — tenant RLS, data-only (no buy/sell directives). Open items: [docs/PHASE4_PENDING.md](docs/PHASE4_PENDING.md).
 - ✅ **Phase 5** — proactive layer: alert engine (budget/goal/milestone/unusual-tx + bank-error webhook alerts), idempotent dispatcher (Redis dedup + outbox), in-app notifications + preference center (quiet hours, TCPA), batched SQS-ready runner. Channels (email/push/SMS) + SQS + digest: [docs/PHASE5_PENDING.md](docs/PHASE5_PENDING.md).
 - ✅ **Phase 6 (app layer)** — reliability + observability: AI **provider auto-fallback** (Claude→Groq), **degradation tier** (`/health/ai`), **`/metrics`** (Prometheus), partition cron, k6 load test, [deployment](docs/PRODUCTION_DEPLOYMENT.md) + [DR runbook](docs/DR_RUNBOOK.md). Remaining = AWS IaC: [docs/PHASE6_PENDING.md](docs/PHASE6_PENDING.md).
+- ✅ **Scale/crash audit hardening** — **bounded connection acquisition** (pool-exhaustion → fast `503 SERVICE_BUSY` instead of an indefinite hang/OOM under load), **Plaid `list_items` N+1 → single JOIN**, and **JWT verified once per request** (memoized on `request.state`, not decoded by both the rate limiter and the auth guard). Remaining 1M-scale item = SQS fan-out for the alert runner ([docs/PHASE6_PENDING.md](docs/PHASE6_PENDING.md)).
 
 ## Quick start (local)
 

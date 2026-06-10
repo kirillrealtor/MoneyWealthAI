@@ -4,6 +4,26 @@ Phase 6 is mostly **infrastructure**. The application-layer reliability and
 observability are built and verified; the AWS provisioning is documented as the
 deploy/DR playbook and is the remaining work.
 
+## Scale/crash audit — fixed in-app ✅
+A senior-audit pass for 1M-user crash/scale bugs. Request-serving hot path is
+sound (no DB connection held across the LLM/Plaid network calls, all big-table
+reads bounded by `LIMIT`/aggregate, `command_timeout=10` caps runaway queries,
+background syncs semaphore-bounded). Three findings fixed:
+- **Bounded connection acquisition** (`app/db.py`) — `pool.acquire()` now waits at
+  most `_POOL_ACQUIRE_TIMEOUT` (5s) via a shared `_acquire()` used by every query
+  path + `with_tenant`. On pool exhaustion it raises a clean **`503 SERVICE_BUSY`**
+  (load shed, LB-retryable) instead of blocking indefinitely → request pile-up →
+  OOM. This was the most likely crash-under-load mode.
+- **Plaid `list_items` N+1 → single `LEFT JOIN`** (`app/modules/plaid/service.py`)
+  — one round-trip regardless of item count; grouped in-app.
+- **JWT verified once per request** (`app/deps.py`) — claims memoized on
+  `request.state`; the rate limiter and `require_auth` no longer each re-verify the
+  signature.
+
+The remaining 1M-scale item is **not a code bug** — it's the alert-runner SQS
+fan-out (see below): `scripts/run_alerts.py` is O(users) sequential and must move
+to a worker fleet to complete inside a daily window at scale.
+
 ## Built & verified (in-app) ✅
 - **AI provider auto-fallback** — `FallbackProvider` fails Claude→Groq on error
   (Tier-2 degradation), recording each attempt. Verified by unit test.

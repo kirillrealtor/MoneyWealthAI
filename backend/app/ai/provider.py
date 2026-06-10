@@ -114,17 +114,62 @@ class ClaudeProvider:
         )
 
 
+class FallbackProvider:
+    """Tries providers in order, failing over on error (Architecture §17.4 — Tier
+    2 degradation). Records each attempt for the AI health/degradation metrics."""
+
+    name = "fallback"
+
+    def __init__(self, providers: list[AdvisorProvider]) -> None:
+        self._providers = providers
+
+    async def run(
+        self,
+        *,
+        system: str,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        execute_tool: ToolExecutor,
+    ) -> AdvisorResult:
+        from .health import record_ai_call
+
+        last_err: Exception | None = None
+        for i, prov in enumerate(self._providers):
+            try:
+                result = await prov.run(system=system, messages=messages, tools=tools, execute_tool=execute_tool)
+                await record_ai_call(prov.name, ok=True, tokens=result.total_tokens)
+                return result
+            except Exception as err:  # noqa: BLE001 - try the next provider
+                last_err = err
+                await record_ai_call(prov.name, ok=False)
+                logger.warning("ai provider failed; failing over", service="ai-advisor",
+                               provider=prov.name, remaining=len(self._providers) - i - 1, error_message=str(err))
+        if last_err is not None:
+            raise last_err
+        raise ApiError("AI_UNAVAILABLE")
+
+
 def get_provider() -> AdvisorProvider:
-    """Select the configured provider, or a clean 503 if none is configured.
-    'auto' prefers Claude (quality for financial reasoning) and falls back to
-    Groq if only Groq is set."""
+    """Build the provider chain (with auto-fallback), or a clean 503 if none is
+    configured. 'auto' prefers Claude and falls back to Groq."""
+    def _groq() -> AdvisorProvider:
+        from .groq_provider import GroqProvider
+        return GroqProvider()
+
     choice = settings.advisor_provider
-    if choice == "groq" or (choice == "auto" and settings.groq_configured and not settings.anthropic_configured):
-        from .groq_provider import GroqProvider
-        return GroqProvider()
-    if choice == "claude" or settings.anthropic_configured:
-        return ClaudeProvider()
-    if settings.groq_configured:
-        from .groq_provider import GroqProvider
-        return GroqProvider()
-    raise ApiError("AI_UNAVAILABLE")
+    providers: list[AdvisorProvider] = []
+    if choice == "claude":
+        if settings.anthropic_configured:
+            providers = [ClaudeProvider()]
+    elif choice == "groq":
+        if settings.groq_configured:
+            providers = [_groq()]
+    else:  # auto — prefer Claude, fall back to Groq
+        if settings.anthropic_configured:
+            providers.append(ClaudeProvider())
+        if settings.groq_configured:
+            providers.append(_groq())
+
+    if not providers:
+        raise ApiError("AI_UNAVAILABLE")
+    return FallbackProvider(providers)

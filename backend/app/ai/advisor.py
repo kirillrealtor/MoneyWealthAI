@@ -14,6 +14,7 @@ from app.errors import ApiError
 from app.logging_conf import logger
 
 from .budget import reserve_budget, settle_usage
+from .health import record_validation_failure
 from .prompts import PROMPT_VERSION, build_system_prompt
 from .provider import AdvisorProvider, get_provider
 from .safety import CRISIS_RESPONSE, detect_crisis, detect_jailbreak, sanitize_input
@@ -112,6 +113,7 @@ async def run_turn(
         val = validate_output(final_text, tool_calls_made=result.tool_calls_made)
         if not val.valid:
             logger.warning("advisor output rejected", service="ai-advisor", reason=val.reason)
+            await record_validation_failure()
             await audit("ai.output_rejected", user_id=user_id, tenant_id=tenant_id, metadata={"reason": val.reason})
             retry_msgs = [*messages, {"role": "user", "content": CORRECTION_INSTRUCTION.format(reason=val.reason)}]
             retry = await prov.run(

@@ -16,7 +16,8 @@ build order in [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md).
 - ✅ **Phase 3** — AI advisor core: grounded **agentic loop** (Claude **or** Groq) + MCP tools (tenant-scoped, **FORCE RLS**), input safety (injection/crisis/jailbreak), output validation, **atomic** per-tier token budgets, **evals harness** (`python -m scripts.run_evals`). Live calls need `ANTHROPIC_API_KEY` or `GROQ_API_KEY` — see [docs/PHASE3_PENDING.md](docs/PHASE3_PENDING.md).
 - ✅ **Phase 4** — planning: **Decimal-exact calculation engine** (debt snowball/avalanche, goal reverse-engineering, affordability) + **Budgets** and **Goals** modules (CRUD, tenant RLS) + 6 new MCP tools (budget/goals/debt/portfolio/affordability/debt-payoff) wired into the advisor.
 - ✅ **Phase 4B** — Debt dashboard (summary, DTI, payoff-at-minimum, refinance flags, snowball/avalanche what-if) + Portfolio dashboard (allocation, sector exposure, concentration flags, unrealized P/L, rebalance gaps) — tenant RLS, data-only (no buy/sell directives). Open items: [docs/PHASE4_PENDING.md](docs/PHASE4_PENDING.md).
-- ⏭️ **Phase 5** — alert engine, notifications, weekly digest
+- ✅ **Phase 5** — proactive layer: alert engine (budget/goal/milestone/unusual-tx + bank-error webhook alerts), idempotent dispatcher (Redis dedup + outbox), in-app notifications + preference center (quiet hours, TCPA), batched SQS-ready runner. Channels (email/push/SMS) + SQS + digest: [docs/PHASE5_PENDING.md](docs/PHASE5_PENDING.md).
+- ✅ **Phase 6 (app layer)** — reliability + observability: AI **provider auto-fallback** (Claude→Groq), **degradation tier** (`/health/ai`), **`/metrics`** (Prometheus), partition cron, k6 load test, [deployment](docs/PRODUCTION_DEPLOYMENT.md) + [DR runbook](docs/DR_RUNBOOK.md). Remaining = AWS IaC: [docs/PHASE6_PENDING.md](docs/PHASE6_PENDING.md).
 
 ## Quick start (local)
 

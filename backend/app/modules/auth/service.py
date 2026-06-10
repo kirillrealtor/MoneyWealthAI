@@ -145,8 +145,12 @@ async def signup(
             )
         )
 
-    # notification_preferences has no RLS (keyed by user_id); plain helper is fine.
-    await db.execute("INSERT INTO notification_preferences (user_id) VALUES ($1)", user_id)
+    # notification_preferences is now FORCE-RLS (migration 008) — write it inside
+    # the tenant context with its tenant_id.
+    async with db.with_tenant(tenant) as conn:
+        await conn.execute(
+            "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
+        )
     await _dispatch_verification(user_id, email_norm, tenant)
     await audit(
         "user.signup", user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id, ip_address=ctx.ip

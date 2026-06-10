@@ -111,14 +111,27 @@ async def dispatch_webhook(payload: dict[str, Any]) -> None:
         return
     item_id, user_id, tenant_id = str(row["item_id"]), str(row["user_id"]), str(row["tenant_id"])
 
+    from app.notifications.dispatch import AlertSpec, send_notification
+    from app.notifications.preferences import load_preferences
+
     _tx_codes = {"SYNC_UPDATES_AVAILABLE", "DEFAULT_UPDATE", "INITIAL_UPDATE"}
     if webhook_type == "TRANSACTIONS" and webhook_code in _tx_codes:
         _spawn_sync(item_id, tenant_id, user_id)
     elif webhook_type == "ITEM" and webhook_code == "ERROR":
         async with db.with_tenant(tenant_id) as conn:
             await conn.execute("UPDATE plaid_items SET item_status = 'error' WHERE item_id = $1", item_id)
+        prefs = await load_preferences(user_id, tenant_id)
+        await send_notification(user_id, tenant_id, AlertSpec(
+            "bank_connection_error", "Bank connection needs attention",
+            "One of your linked accounts hit a sync error. Re-link it to keep your data up to date.",
+            "critical", f"bank_err:{item_id}"), prefs)
     elif webhook_type == "ITEM" and webhook_code == "PENDING_EXPIRATION":
         async with db.with_tenant(tenant_id) as conn:
             await conn.execute("UPDATE plaid_items SET item_status = 'pending_expiration' WHERE item_id = $1", item_id)
+        prefs = await load_preferences(user_id, tenant_id)
+        await send_notification(user_id, tenant_id, AlertSpec(
+            "bank_token_expiring", "Re-link your bank soon",
+            "A bank connection will expire in ~7 days. Re-link now to avoid interruption.",
+            "warning", f"bank_exp:{item_id}"), prefs)
     else:
         logger.info("unhandled plaid webhook", service="plaid", webhook_type=webhook_type, webhook_code=webhook_code)

@@ -77,55 +77,65 @@ async def run_turn(
 
     # 4. Atomic budget reservation (cost control / abuse). Reconciled in step 8.
     await reserve_budget(user_id, tenant_id, tier)
+    # The reservation MUST be reconciled on every path. If the turn raises
+    # (provider 5xx, timeout, validation error), settle with actual_tokens=0 so
+    # the 5,000-token reservation is fully refunded — no silent budget drain.
+    actual_tokens = 0
+    provider_name = "unknown"
+    try:
+        # 5. Build context: history + live snapshot + persona/compliance system prompt.
+        history = await _load_history(chat_id, tenant_id)
+        snapshot = await get_financial_snapshot(user_id, tenant_id)
+        system = build_system_prompt(first_name=first_name, persona=persona, snapshot=snapshot)
+        messages: list[dict[str, Any]] = [*history, {"role": "user", "content": message}]
 
-    # 5. Build context: history + live snapshot + persona/compliance system prompt.
-    history = await _load_history(chat_id, tenant_id)
-    snapshot = await get_financial_snapshot(user_id, tenant_id)
-    system = build_system_prompt(first_name=first_name, persona=persona, snapshot=snapshot)
-    messages: list[dict[str, Any]] = [*history, {"role": "user", "content": message}]
+        prov = provider or get_provider()
 
-    prov = provider or get_provider()
+        async def execute_tool(name: str, raw: dict[str, Any]) -> tuple[str, bool]:
+            executor = EXECUTORS.get(name)
+            if executor is None:
+                return json.dumps({"error": "unknown tool"}), True
+            try:
+                tool_out = await executor(user_id, tenant_id, raw)
+                return json.dumps(tool_out, default=str), False
+            except ValidationError:
+                return json.dumps({"error": "invalid tool input"}), True
+            except Exception as err:  # noqa: BLE001 - surface as tool error, not a crash
+                logger.error("tool execution failed", service="ai-advisor", tool=name, error_message=str(err))
+                return json.dumps({"error": "tool failed"}), True
 
-    async def execute_tool(name: str, raw: dict[str, Any]) -> tuple[str, bool]:
-        executor = EXECUTORS.get(name)
-        if executor is None:
-            return json.dumps({"error": "unknown tool"}), True
-        try:
-            result = await executor(user_id, tenant_id, raw)
-            return json.dumps(result, default=str), False
-        except ValidationError:
-            return json.dumps({"error": "invalid tool input"}), True
-        except Exception as err:  # noqa: BLE001 - surface as tool error, not a crash
-            logger.error("tool execution failed", service="ai-advisor", tool=name, error_message=str(err))
-            return json.dumps({"error": "tool failed"}), True
+        # 6. Run the grounded agentic loop.
+        result = await prov.run(system=system, messages=messages, tools=TOOL_DEFINITIONS, execute_tool=execute_tool)
 
-    # 6. Run the grounded agentic loop.
-    result = await prov.run(system=system, messages=messages, tools=TOOL_DEFINITIONS, execute_tool=execute_tool)
+        # 7. Validate; retry once with a correction, else safe fallback.
+        final_text = result.text
+        val = validate_output(final_text, tool_calls_made=result.tool_calls_made)
+        if not val.valid:
+            logger.warning("advisor output rejected", service="ai-advisor", reason=val.reason)
+            await audit("ai.output_rejected", user_id=user_id, tenant_id=tenant_id, metadata={"reason": val.reason})
+            retry_msgs = [*messages, {"role": "user", "content": CORRECTION_INSTRUCTION.format(reason=val.reason)}]
+            retry = await prov.run(
+                system=system, messages=retry_msgs, tools=TOOL_DEFINITIONS, execute_tool=execute_tool
+            )
+            result.input_tokens += retry.input_tokens
+            result.output_tokens += retry.output_tokens
+            result.tool_calls_made += retry.tool_calls_made
+            retry_ok = validate_output(retry.text, tool_calls_made=result.tool_calls_made).valid
+            final_text = retry.text if retry_ok else _FALLBACK
 
-    # 7. Validate; retry once with a correction, else safe fallback.
-    final_text = result.text
-    val = validate_output(final_text, tool_calls_made=result.tool_calls_made)
-    if not val.valid:
-        logger.warning("advisor output rejected", service="ai-advisor", reason=val.reason)
-        await audit("ai.output_rejected", user_id=user_id, tenant_id=tenant_id, metadata={"reason": val.reason})
-        retry_msgs = [*messages, {"role": "user", "content": CORRECTION_INSTRUCTION.format(reason=val.reason)}]
-        retry = await prov.run(system=system, messages=retry_msgs, tools=TOOL_DEFINITIONS, execute_tool=execute_tool)
-        result.input_tokens += retry.input_tokens
-        result.output_tokens += retry.output_tokens
-        result.tool_calls_made += retry.tool_calls_made
-        if validate_output(retry.text, tool_calls_made=result.tool_calls_made).valid:
-            final_text = retry.text
-        else:
-            final_text = _FALLBACK
+        actual_tokens = result.total_tokens
+        provider_name = result.provider
 
-    # 8. Persist + reconcile the token reservation to the real count.
-    mid = await _persist(chat_id, tenant_id, message, final_text, provider=result.provider,
-                         tokens=result.total_tokens, model=result.model)
-    await settle_usage(user_id, tenant_id, result.total_tokens, result.provider)
-    logger.info("advisor turn complete", service="ai-advisor", provider=result.provider,
-                input_tokens=result.input_tokens, output_tokens=result.output_tokens,
-                tool_calls=result.tool_calls_made)
-    return TurnResult(chat_id, mid, final_text, result.tool_calls_made, result.provider, result.total_tokens)
+        # 8. Persist the turn.
+        mid = await _persist(chat_id, tenant_id, message, final_text, provider=result.provider,
+                             tokens=result.total_tokens, model=result.model)
+        logger.info("advisor turn complete", service="ai-advisor", provider=result.provider,
+                    input_tokens=result.input_tokens, output_tokens=result.output_tokens,
+                    tool_calls=result.tool_calls_made)
+        return TurnResult(chat_id, mid, final_text, result.tool_calls_made, result.provider, result.total_tokens)
+    finally:
+        # Always reconcile the reservation (refund in full if the turn failed).
+        await settle_usage(user_id, tenant_id, actual_tokens, provider_name)
 
 
 # --------------------------------------------------------------------------

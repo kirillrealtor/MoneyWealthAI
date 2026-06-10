@@ -26,7 +26,15 @@ Legend: 🔑 key/account · ⚙️ config/infra · 🧩 small code
   fire-and-forget asyncio task — see `service._spawn_sync`). The sync function is
   already idempotent and concurrency-locked, so this is a transport swap.
 - ⚙️ Automate **monthly `transactions` partition creation** (cron, 1 month ahead).
-- ⚙️ Add **investments/liabilities sync** calls to the worker (client methods exist).
+- ⚙️ Add **investments/liabilities sync** calls to the worker (client methods exist). This is
+  what populates `debt_accounts` and `portfolio_holdings` — until it ships, the Debt and
+  Portfolio dashboards (Phase 4B) return empty in production.
+  - ⚠️ **Normalize APR to a decimal fraction** when writing `debt_accounts.apr`: Plaid
+    liabilities often return APR as a **percentage (24.99)**, but the calculation engine
+    expects a **fraction (0.2499)**. A unit mismatch makes every interest/payoff number
+    **100× wrong**. Divide by 100 at the sync boundary if Plaid returns a percentage.
+  - ⚙️ Normalize holding `asset_class`/`sector` to the dashboard's vocabulary
+    (equity/fixed_income/cash/alternative) so allocation buckets are consistent.
 
 ## Security already enforced (no action needed)
 - Access tokens AES-256-GCM encrypted at rest, AAD-bound to user, never logged.

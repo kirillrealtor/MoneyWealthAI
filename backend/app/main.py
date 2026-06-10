@@ -15,9 +15,13 @@ from app.logging_conf import configure_logging, logger
 from app.middleware import SecurityMiddleware, TracingMiddleware
 from app.modules.advisor.router import router as advisor_router
 from app.modules.auth.router import router as auth_router
+from app.modules.budgets.router import router as budgets_router
+from app.modules.debt.router import router as debt_router
+from app.modules.goals.router import router as goals_router
 from app.modules.health.router import router as health_router
 from app.modules.plaid.router import router as plaid_router
 from app.modules.plaid.router import webhook_router as plaid_webhook_router
+from app.modules.portfolio.router import router as portfolio_router
 from app.redis_client import close_redis
 
 
@@ -58,6 +62,10 @@ def create_app() -> FastAPI:
     app.include_router(plaid_router)
     app.include_router(plaid_webhook_router)
     app.include_router(advisor_router)
+    app.include_router(budgets_router)
+    app.include_router(goals_router)
+    app.include_router(debt_router)
+    app.include_router(portfolio_router)
     return app
 
 

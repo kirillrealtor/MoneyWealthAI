@@ -89,6 +89,27 @@ async def test_run_turn_grounds_persists_and_accounts(client: httpx.AsyncClient)
     assert int(used) == 150  # reserve 5000 then settle (150 - 5000) = net 150
 
 
+class _RaisingProvider:
+    name = "boom"
+
+    async def run(self, **_kw: object) -> object:
+        raise RuntimeError("provider down")
+
+
+async def test_token_reservation_refunded_when_turn_fails(client: httpx.AsyncClient) -> None:
+    """If the LLM call blows up, the reserved tokens must be refunded — no silent
+    budget drain (net token_usage for the day stays 0)."""
+    user_id = await _seed_user_with_spending(client)
+    with pytest.raises(RuntimeError):
+        await run_turn(
+            user_id=user_id, tenant_id=TENANT, first_name="Test", persona="balanced", tier="free",
+            chat_id=None, message="How am I doing?", module=None, provider=_RaisingProvider(),  # type: ignore[arg-type]
+        )
+    async with db.with_tenant(TENANT) as conn:
+        used = await conn.fetchval("SELECT tokens FROM token_usage WHERE user_id = $1 AND date = CURRENT_DATE", user_id)
+    assert int(used or 0) == 0
+
+
 async def test_crisis_message_bypasses_llm(client: httpx.AsyncClient) -> None:
     user_id = await _seed_user_with_spending(client)
     # Provider would raise if called — crisis path must not call it.

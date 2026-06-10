@@ -14,7 +14,7 @@ from app.errors import ApiError
 from app.integrations.plaid_client import get_plaid
 from app.logging_conf import logger
 
-from .sync import run_sync_for_item, to_money
+from .sync import run_sync_for_item, sync_investments_for_item, sync_liabilities_for_item, to_money
 
 
 async def create_link_token(user_id: str) -> dict[str, Any]:
@@ -88,7 +88,7 @@ async def exchange_public_token(user_id: str, tenant_id: str, public_token: str,
         metadata={"institution_id": institution_id, "accounts": len(accounts)},
     )
 
-    # 4. Kick off the historical transaction sync in the background.
+    # 4. Kick off syncs in the background.
     _spawn_sync(str(item_id), tenant_id, user_id)
 
     return {"item_id": str(item_id), "institution_name": None, "accounts_linked": len(accounts)}
@@ -166,13 +166,14 @@ _background_tasks: set[asyncio.Task[Any]] = set()
 async def _guarded_sync(item_id: str, tenant_id: str, user_id: str) -> None:
     async with _sync_semaphore:
         await run_sync_for_item(item_id, tenant_id, user_id)
+    async with _sync_semaphore:
+        await sync_liabilities_for_item(item_id, tenant_id, user_id)
+    async with _sync_semaphore:
+        await sync_investments_for_item(item_id, tenant_id, user_id)
 
 
 def _spawn_sync(item_id: str, tenant_id: str, user_id: str) -> None:
-    """Fire-and-forget background sync, bounded by a semaphore. NOTE: production
-    swaps this for an SQS enqueue so syncs run on a dedicated worker fleet."""
     task = asyncio.create_task(_guarded_sync(item_id, tenant_id, user_id))
-    # Keep a strong ref so the task isn't GC'd mid-flight; log any failure.
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
 

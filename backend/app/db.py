@@ -31,6 +31,7 @@ def _normalize_dsn(url: str) -> str:
 async def init_pool() -> None:
     global _pool
     if _pool is None:
+        print("DATABASE_URL =", settings.database_url)
         _pool = await asyncpg.create_pool(
             dsn=_normalize_dsn(settings.database_url),
             min_size=2,

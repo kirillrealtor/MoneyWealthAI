@@ -5,7 +5,7 @@ reachable - used by the load balancer / ECS.
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -18,7 +18,7 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "ts": datetime.now(UTC).isoformat()}
+    return {"status": "ok", "ts": datetime.now(timezone.utc).isoformat()}
 
 
 @router.get("/health/ready")

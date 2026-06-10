@@ -148,3 +148,109 @@ async def run_sync_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
         raise
     finally:
         await redis_client.delete(lock_key)
+
+
+async def sync_liabilities_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
+    lock_key = f"plaidliab:{item_id}"
+    got_lock = await redis_client.set(lock_key, "1", nx=True, ex=_LOCK_TTL_S)
+    if not got_lock:
+        logger.info("liabilities sync already running; skipping", service="plaid-sync", item_id=item_id)
+        return 0
+
+    try:
+        async with db.with_tenant(tenant_id) as conn:
+            item = await conn.fetchrow(
+                "SELECT access_token_enc FROM plaid_items WHERE item_id = $1", item_id
+            )
+            if not item:
+                return 0
+
+        token = decrypt(bytes(item["access_token_enc"]), aad=user_id)
+        plaid = get_plaid()
+        resp = await plaid.get_liabilities(token)
+        liabilities = resp.get("liabilities", {})
+
+        total_added = 0
+        for account in liabilities.get("credit", []) + liabilities.get("mortgage", []) + liabilities.get("student", []):
+            account_id = account.get("account_id")
+            account_number = account.get("account_number", "")
+            
+            async with db.with_tenant(tenant_id) as conn:
+                await conn.execute(
+                    """INSERT INTO debt_accounts
+                           (item_id, tenant_id, plaid_account_id, account_number, balance, apr, 
+                            minimum_payment, debt_type, last_sync_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                       ON CONFLICT (plaid_account_id) DO UPDATE
+                           SET balance = EXCLUDED.balance,
+                               apr = EXCLUDED.apr,
+                               minimum_payment = EXCLUDED.minimum_payment,
+                               last_sync_at = NOW()""",
+                    item_id, tenant_id, account_id, account_number[-4:] if account_number else None,
+                    to_money(account.get("balance")), to_money(account.get("apr")),
+                    to_money(account.get("minimum_payment")), "debt",
+                )
+            total_added += 1
+
+        await audit("plaid.liabilities_synced", user_id=user_id, tenant_id=tenant_id,
+                    resource="plaid_item", resource_id=item_id, metadata={"accounts": total_added})
+        logger.info("liabilities sync completed", service="plaid-sync", item_id=item_id, accounts=total_added)
+        return total_added
+
+    except Exception as err:
+        logger.error("liabilities sync failed", service="plaid-sync", item_id=item_id, error_message=str(err))
+        raise
+    finally:
+        await redis_client.delete(lock_key)
+
+
+async def sync_investments_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
+    lock_key = f"plaidinvest:{item_id}"
+    got_lock = await redis_client.set(lock_key, "1", nx=True, ex=_LOCK_TTL_S)
+    if not got_lock:
+        logger.info("investments sync already running; skipping", service="plaid-sync", item_id=item_id)
+        return 0
+
+    try:
+        async with db.with_tenant(tenant_id) as conn:
+            item = await conn.fetchrow(
+                "SELECT access_token_enc FROM plaid_items WHERE item_id = $1", item_id
+            )
+            if not item:
+                return 0
+
+        token = decrypt(bytes(item["access_token_enc"]), aad=user_id)
+        plaid = get_plaid()
+        resp = await plaid.get_investments_holdings(token)
+        holdings = resp.get("holdings", [])
+
+        total_added = 0
+        for holding in holdings:
+            security_id = holding.get("security_id")
+            
+            async with db.with_tenant(tenant_id) as conn:
+                await conn.execute(
+                    """INSERT INTO portfolio_holdings
+                           (item_id, tenant_id, plaid_account_id, security_id, ticker, quantity,
+                            cost_basis, institution_value, last_sync_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                       ON CONFLICT (security_id, plaid_account_id) DO UPDATE
+                           SET quantity = EXCLUDED.quantity,
+                               institution_value = EXCLUDED.institution_value,
+                               last_sync_at = NOW()""",
+                    item_id, tenant_id, holding.get("account_id"), security_id,
+                    holding.get("ticker") or "", to_money(holding.get("quantity")),
+                    to_money(holding.get("cost_basis")), to_money(holding.get("institution_value")),
+                )
+            total_added += 1
+
+        await audit("plaid.investments_synced", user_id=user_id, tenant_id=tenant_id,
+                    resource="plaid_item", resource_id=item_id, metadata={"holdings": total_added})
+        logger.info("investments sync completed", service="plaid-sync", item_id=item_id, holdings=total_added)
+        return total_added
+
+    except Exception as err:
+        logger.error("investments sync failed", service="plaid-sync", item_id=item_id, error_message=str(err))
+        raise
+    finally:
+        await redis_client.delete(lock_key)

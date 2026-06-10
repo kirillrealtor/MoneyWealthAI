@@ -8,7 +8,7 @@ tenant_id so the tenant can be resolved without a circular read of users.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import timezone, datetime, timedelta
 
 from app import db
 from app.audit import audit
@@ -104,7 +104,7 @@ async def _dispatch_verification(user_id: str, email: str, tenant_id: str) -> No
         user_id,
         tenant_id,
         sha256(raw),
-        datetime.now(UTC) + VERIFY_TTL,
+        datetime.now(timezone.utc) + VERIFY_TTL,
     )
     await send_mail(build_verification_email(email, raw))
 

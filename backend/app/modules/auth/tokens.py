@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone #python 3.10 won't support UTC
 from typing import Any, cast
 
 import jwt
@@ -37,7 +37,7 @@ async def issue_refresh_token(
     circular read of the RLS-protected users table.
     """
     raw = random_token(48)
-    expires_at = datetime.now(UTC) + timedelta(seconds=settings.refresh_token_ttl)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=settings.refresh_token_ttl)
     await db.execute(
         """INSERT INTO user_sessions (user_id, tenant_id, token_hash, ip_address, user_agent, expires_at)
            VALUES ($1, $2, $3, $4, $5, $6)""",

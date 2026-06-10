@@ -15,6 +15,7 @@ from app.logging_conf import configure_logging, logger
 from app.middleware import SecurityMiddleware, TracingMiddleware
 from app.modules.auth.router import router as auth_router
 from app.modules.health.router import router as health_router
+from app.modules.planning.router import router as planning_router
 from app.modules.plaid.router import router as plaid_router
 from app.modules.plaid.router import webhook_router as plaid_webhook_router
 from app.redis_client import close_redis
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(plaid_router)
     app.include_router(plaid_webhook_router)
+    app.include_router(planning_router)
     return app
 
 

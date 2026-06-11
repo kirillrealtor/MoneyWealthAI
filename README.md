@@ -4,7 +4,7 @@ AI-native personal finance platform. Single repository, language-separated by ap
 
 ```
 .
-├── backend/          Python · FastAPI · asyncpg · Redis  (API + AI orchestration)
+├── backend/          Python · FastAPI · aiosqlite · Redis  (API + AI orchestration)
 │   ├── app/            application code
 │   ├── db/migrations/  SQL schema (source of truth)
 │   ├── scripts/        migration runner
@@ -23,7 +23,7 @@ still be split into its own repo later (`git subtree split`) if needed.
 
 ## Quick start (backend)
 ```bash
-docker compose up -d postgres redis        # datastores (Postgres :5433, Redis :6380)
+docker compose up -d redis        # datastore (Redis :6380, SQLite is managed locally)
 cd backend
 python -m venv .venv && .venv/Scripts/activate   # Windows; use bin/activate on *nix
 pip install -r requirements-dev.txt

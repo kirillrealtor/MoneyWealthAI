@@ -11,14 +11,10 @@ from httpx import ASGITransport
 
 
 def _db_reachable() -> bool:
-    try:
-        with socket.create_connection(("localhost", 5433), timeout=1):
-            return True
-    except OSError:
-        return False
+    return True
 
 
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
+pytestmark = pytest.mark.skipif(not _db_reachable(), reason="SQLite is always reachable")
 
 
 @pytest.fixture

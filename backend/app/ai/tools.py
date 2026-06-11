@@ -116,13 +116,14 @@ async def exec_get_account_balances(user_id: str, tenant_id: str, raw: dict[str,
     args = BalancesInput.model_validate(raw)
     async with db.with_tenant(tenant_id) as conn:
         if args.account_types:
+            placeholders = ", ".join(f"${i+2}" for i in range(len(args.account_types)))
             rows = await conn.fetch(
-                """SELECT pa.name, pa.type, pa.subtype, pa.balance_current, pa.currency_code
-                     FROM plaid_accounts pa
-                     JOIN plaid_items pi ON pa.item_id = pi.item_id
-                    WHERE pi.user_id = $1 AND pa.type = ANY($2::text[])
-                    ORDER BY pa.balance_current DESC NULLS LAST LIMIT 25""",
-                user_id, args.account_types,
+                f"""SELECT pa.name, pa.type, pa.subtype, pa.balance_current, pa.currency_code
+                      FROM plaid_accounts pa
+                      JOIN plaid_items pi ON pa.item_id = pi.item_id
+                     WHERE pi.user_id = $1 AND pa.type IN ({placeholders})
+                     ORDER BY pa.balance_current DESC NULLS LAST LIMIT 25""",
+                user_id, *args.account_types,
             )
         else:
             rows = await conn.fetch(

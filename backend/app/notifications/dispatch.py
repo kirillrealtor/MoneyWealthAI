@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import asyncpg
-
 from app import db
 from app.logging_conf import logger
 from app.redis_client import redis_client
@@ -110,7 +108,7 @@ async def _deliver_via_outbox(
                    VALUES ($1,$2,$3,$4,$5) RETURNING outbox_id""",
                 user_id, tenant_id, alert_id, channel, spec.dedupe_key,
             )
-        except asyncpg.UniqueViolationError:
+        except db.UniqueViolationError:
             return  # already queued for this channel — at-least-once, never twice
 
     ok = await channels.deliver(channel, to_email=to_email, title=spec.title, body=spec.body)

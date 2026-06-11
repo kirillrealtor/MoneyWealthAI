@@ -25,7 +25,7 @@ async def main() -> int:
     dispatched = 0
     try:
         while True:
-            rows = await db.fetch("SELECT user_id, tenant_id FROM list_users_for_scan($1, $2)", after, _BATCH)
+            rows = await db.fetch("SELECT user_id, tenant_id FROM users WHERE ($1 IS NULL OR user_id > $1) ORDER BY user_id LIMIT $2", after, _BATCH)
             if not rows:
                 break
             for r in rows:

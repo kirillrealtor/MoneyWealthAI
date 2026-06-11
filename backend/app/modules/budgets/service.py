@@ -4,8 +4,6 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-import asyncpg
-
 from app import db
 from app.errors import ApiError
 
@@ -25,7 +23,7 @@ async def create_budget(
                    VALUES ($1, $2, $3, $4, $5) RETURNING budget_id""",
                 user_id, tenant_id, category, monthly_limit, alert_at_pct,
             ))
-        except asyncpg.UniqueViolationError as err:  # concurrent create of the same category
+        except db.UniqueViolationError as err:  # concurrent create of the same category
             raise ApiError("CONFLICT", message="A budget for this category already exists.") from err
 
 

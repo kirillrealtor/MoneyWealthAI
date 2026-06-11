@@ -105,7 +105,7 @@ async def dispatch_webhook(payload: dict[str, Any]) -> None:
     if not plaid_item_id:
         return
 
-    row = await db.fetchrow("SELECT * FROM resolve_plaid_item($1)", plaid_item_id)
+    row = await db.fetchrow("SELECT item_id, user_id, tenant_id FROM plaid_items WHERE plaid_item_id = $1", plaid_item_id)
     if not row:
         logger.warning("webhook for unknown item", service="plaid")
         return

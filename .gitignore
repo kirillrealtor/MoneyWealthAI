@@ -26,3 +26,8 @@ dist/
 *.log
 .DS_Store
 *.txt.cookie
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal

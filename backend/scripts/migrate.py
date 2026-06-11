@@ -1,4 +1,4 @@
-"""Minimal forward-only migration runner.
+"""Minimal forward-only migration runner for SQLite.
 
 Runs every db/migrations/*.sql file (sorted) exactly once, each in its own
 transaction, recording applied files in schema_migrations.
@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-import asyncpg
+import aiosqlite
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,23 +20,38 @@ load_dotenv()
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "db" / "migrations"
 
 
-def _dsn() -> str:
-    # Migrations run as the owner/superuser. Prefer MIGRATION_DATABASE_URL;
-    # fall back to DATABASE_URL for single-role setups.
+def _get_db_path() -> str:
     url = os.environ.get("MIGRATION_DATABASE_URL") or os.environ["DATABASE_URL"]
-    return "postgresql://" + url[len("postgres://"):] if url.startswith("postgres://") else url
+    if url.startswith("sqlite+aiosqlite:///"):
+        return url[len("sqlite+aiosqlite:///") :]
+    elif url.startswith("sqlite:///"):
+        return url[len("sqlite:///") :]
+    return url
 
 
 async def main() -> int:
-    conn = await asyncpg.connect(dsn=_dsn())
+    db_path = _get_db_path()
+    if db_path != ":memory:" and not os.path.isabs(db_path):
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        db_path = os.path.join(backend_dir, db_path)
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+    conn = await aiosqlite.connect(db_path)
     try:
         await conn.execute(
             """CREATE TABLE IF NOT EXISTS schema_migrations (
                    filename   TEXT PRIMARY KEY,
-                   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                   applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
                );"""
         )
-        applied = {r["filename"] for r in await conn.fetch("SELECT filename FROM schema_migrations")}
+        await conn.commit()
+
+        # Query applied migrations
+        applied = set()
+        async with conn.execute("SELECT filename FROM schema_migrations") as cursor:
+            async for row in cursor:
+                applied.add(row[0])
+
         files = sorted(p for p in MIGRATIONS_DIR.glob("*.sql"))
 
         count = 0
@@ -46,12 +61,14 @@ async def main() -> int:
             sql = path.read_text(encoding="utf-8")
             print(f"Applying {path.name} ... ", end="", flush=True)
             try:
-                async with conn.transaction():
-                    await conn.execute(sql)  # simple-query protocol: multi-statement ok
-                    await conn.execute("INSERT INTO schema_migrations (filename) VALUES ($1)", path.name)
+                # SQLite executes scripts using executescript, which handles transactions
+                # or executes them inside one. We execute the script and write schema_migrations entry.
+                await conn.executescript(sql)
+                await conn.execute("INSERT INTO schema_migrations (filename) VALUES (?)", (path.name,))
+                await conn.commit()
                 print("done")
                 count += 1
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 print("FAILED")
                 print(err, file=sys.stderr)
                 return 1

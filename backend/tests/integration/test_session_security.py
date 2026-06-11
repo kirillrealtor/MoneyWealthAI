@@ -14,7 +14,7 @@ from app.modules.auth.service import AuthCtx, refresh
 from app.modules.auth.tokens import issue_refresh_token
 from tests.integration.conftest import _db_reachable
 
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
+pytestmark = pytest.mark.skipif(not _db_reachable(), reason="SQLite is always reachable")
 
 
 async def test_refresh_reuse_revokes_whole_family(client: httpx.AsyncClient) -> None:

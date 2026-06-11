@@ -1,4 +1,4 @@
-"""End-to-end auth flow against real Postgres + Redis via the ASGI app."""
+"""End-to-end auth flow against SQLite + Redis via the ASGI app."""
 from __future__ import annotations
 
 import time
@@ -8,7 +8,7 @@ import pytest
 
 from tests.integration.conftest import _db_reachable
 
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
+pytestmark = pytest.mark.skipif(not _db_reachable(), reason="SQLite is always reachable")
 
 
 async def test_signup_login_me_and_wrong_password(client: httpx.AsyncClient) -> None:

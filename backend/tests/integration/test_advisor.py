@@ -1,4 +1,4 @@
-"""Advisor orchestration against real Postgres with a mocked LLM provider:
+"""Advisor orchestration against SQLite with a mocked LLM provider:
 proves the grounded tool loop, tenant-scoped executors, persistence, and token
 accounting — without calling Anthropic."""
 from __future__ import annotations
@@ -16,7 +16,7 @@ from app.config import settings
 from app.encryption import encrypt
 from tests.integration.conftest import _db_reachable
 
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
+pytestmark = pytest.mark.skipif(not _db_reachable(), reason="SQLite is always reachable")
 TENANT = settings.default_tenant_id
 
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,8 +46,27 @@ class Settings(BaseSettings):
     # Comma-separated CORS origins (credentialed). Empty = no cross-origin.
     cors_origins: str = ""
 
-    mail_transport: Literal["console", "ses", "sendgrid"] = "console"
+    # ---- Email ----
+    # console = log instead of sending (dev). smtp = any SMTP provider (Gmail,
+    # Amazon SES SMTP endpoint, Mailgun, ...). sendgrid = SendGrid HTTP API.
+    mail_transport: Literal["console", "smtp", "sendgrid"] = "console"
     mail_from: str = "no-reply@financialadvisor.local"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_starttls: bool = True  # STARTTLS on port 587 (set False only for :25 relays)
+    sendgrid_api_key: str | None = None
+
+    @model_validator(mode="after")
+    def _check_mail_transport(self) -> Settings:
+        # Fail at startup, not at first signup: a half-configured transport
+        # would otherwise surface as users who never get their verify email.
+        if self.mail_transport == "smtp" and not self.smtp_host:
+            raise ValueError("MAIL_TRANSPORT=smtp requires SMTP_HOST")
+        if self.mail_transport == "sendgrid" and not self.sendgrid_api_key:
+            raise ValueError("MAIL_TRANSPORT=sendgrid requires SENDGRID_API_KEY")
+        return self
 
     # Cloudflare Turnstile (bot/captcha). Disabled by default so local dev and
     # tests run without a key; enable + set the secret in staging/production.

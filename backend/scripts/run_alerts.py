@@ -14,6 +14,7 @@ import asyncio
 from app import db
 from app.alerts.engine import run_alerts_for_user
 from app.db import close_pool, init_pool
+from app.redis_client import close_redis
 
 _BATCH = 500
 
@@ -36,6 +37,10 @@ async def main() -> int:
                 processed += 1
             after = str(rows[-1]["user_id"])
     finally:
+        # Close Redis too (the dispatcher uses it for dedup) — otherwise its
+        # connection __del__ fires after the loop closes and spams the cron log
+        # with "Event loop is closed" tracebacks on every run.
+        await close_redis()
         await close_pool()
     print(f"Alert scan complete: {processed} users, {dispatched} notifications dispatched.")
     return 0

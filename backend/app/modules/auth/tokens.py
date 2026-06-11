@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import time
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
 import jwt
 
@@ -29,15 +29,12 @@ def sign_access_token(user_id: str, tenant_id: str, tier: str) -> str:
 def verify_access_token(token: str) -> dict[str, Any]:
     # Verifies signature AND issuer/audience — a token minted for a different
     # service/audience is rejected even if signed with a leaked key elsewhere.
-    return cast(
-        "dict[str, Any]",
-        jwt.decode(
-            token,
-            settings.jwt_access_secret,
-            algorithms=["HS256"],
-            audience=settings.jwt_audience,
-            issuer=settings.jwt_issuer,
-        ),
+    return jwt.decode(
+        token,
+        settings.jwt_access_secret,
+        algorithms=["HS256"],
+        audience=settings.jwt_audience,
+        issuer=settings.jwt_issuer,
     )
 
 

@@ -13,6 +13,7 @@ from .schemas import (
     LoginRequest,
     MeResponse,
     MessageResponse,
+    ResendVerificationRequest,
     SignupRequest,
     SignupResponse,
     TokenResponse,
@@ -62,6 +63,17 @@ async def signup(body: SignupRequest, request: Request, tenant_id: str = Depends
 async def verify_email(token: str) -> MessageResponse:
     await service.verify_email(token)
     return MessageResponse(message="Email verified. You can now log in.")
+
+
+@router.post("/resend-verification", response_model=MessageResponse,
+             dependencies=[Depends(rate_limit("auth_resend", 3))])
+async def resend_verification(body: ResendVerificationRequest, request: Request,
+                              tenant_id: str = Depends(resolve_tenant)) -> MessageResponse:
+    await service.resend_verification(
+        email=body.email, tenant_id=tenant_id, captcha_token=body.captcha_token, ctx=_ctx(request)
+    )
+    # Generic regardless of account state (anti-enumeration).
+    return MessageResponse(message="If an unverified account exists for this email, a new link has been sent.")
 
 
 @router.post("/login", response_model=TokenResponse,

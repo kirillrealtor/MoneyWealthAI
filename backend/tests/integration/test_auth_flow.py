@@ -74,3 +74,27 @@ async def test_extra_fields_rejected(client: httpx.AsyncClient) -> None:
         json={"email": "x@y.com", "password": "whatever123", "is_admin": True},
     )
     assert r.status_code == 422  # extra="forbid" rejects unexpected fields
+
+
+async def test_resend_verification_is_generic_for_all_states(client: httpx.AsyncClient) -> None:
+    """Anti-enumeration: the response must be byte-identical whether the email
+    belongs to an unverified account or to nobody at all."""
+    from app.redis_client import redis_client
+
+    # Redis rate-limit counters persist across tests; clear the resend bucket so
+    # the two probe calls share a fresh budget (otherwise an accumulated count
+    # could 429 the second call and mask the anti-enumeration check).
+    async for key in redis_client.scan_iter("rl:auth_resend:*"):
+        await redis_client.delete(key)
+
+    email = f"it+resend{int(time.time()*1000)}@example.com"
+    r = await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
+    assert r.status_code == 201
+
+    r_existing = await client.post("/api/v1/auth/resend-verification", json={"email": email})
+    r_unknown = await client.post(
+        "/api/v1/auth/resend-verification", json={"email": f"nobody{int(time.time()*1000)}@example.com"}
+    )
+    assert r_existing.status_code == 200
+    assert r_unknown.status_code == 200
+    assert r_existing.json()["message"] == r_unknown.json()["message"]

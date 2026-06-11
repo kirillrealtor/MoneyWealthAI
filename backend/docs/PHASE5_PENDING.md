@@ -21,8 +21,12 @@ Legend: 🔑 key/account · ⚙️ config/infra · 🧩 small code
 - **Runner**: `python -m scripts.run_alerts` (cron-triggerable; per-user unit of work).
 
 ## To activate channels (gated, like email/captcha)
-- 🔑🧩 **Email** notifications already deliver via the pluggable `send_mail()` (console in
-  dev). Wire SES/Postmark to send for real (same adapter as auth email).
+- ✅ **Email** — real transports implemented: `MAIL_TRANSPORT=smtp` (any provider —
+  Gmail, **Amazon SES SMTP endpoint**, Mailgun) or `sendgrid` (HTTP API). Same adapter
+  serves auth verification emails and notifications; half-configured transports fail at
+  startup. `POST /auth/resend-verification` (captcha-gated, anti-enumeration) recovers
+  users whose verification email blipped. **To go live: set `MAIL_TRANSPORT` + SMTP/
+  SendGrid credentials in env** — that's the only remaining step.
 - 🔑🧩 **Push (FCM)** — `channels.is_configured("push")` returns False; implement the FCM
   adapter + device-token storage, then flip it on.
 - 🔑🧩 **SMS (Twilio)** — gated behind `sms_opt_in` (TCPA); implement the Twilio adapter.

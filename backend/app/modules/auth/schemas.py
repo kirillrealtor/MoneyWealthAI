@@ -28,6 +28,14 @@ class LoginRequest(BaseModel):
     captcha_token: str | None = None
 
 
+class ResendVerificationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    # Same captcha gate as signup — stops the endpoint being used to mail-bomb.
+    captcha_token: str | None = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     user_id: str

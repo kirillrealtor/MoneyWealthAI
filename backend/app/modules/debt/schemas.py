@@ -5,6 +5,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.money import MONEY_MAX
+
 
 class DebtOut(BaseModel):
     debt_id: str
@@ -27,7 +29,7 @@ class DebtSummary(BaseModel):
 class PayoffRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    extra_monthly_payment: Decimal = Field(default=Decimal("0"), ge=0)
+    extra_monthly_payment: Decimal = Field(default=Decimal("0"), ge=0, le=MONEY_MAX)
 
 
 class PayoffMethod(BaseModel):

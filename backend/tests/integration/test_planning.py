@@ -61,3 +61,27 @@ async def test_goal_create_reverse_engineers_target(client: httpx.AsyncClient) -
 async def test_planning_requires_auth(client: httpx.AsyncClient) -> None:
     assert (await client.get("/api/v1/budgets")).status_code == 401
     assert (await client.get("/api/v1/goals")).status_code == 401
+
+
+async def test_money_overflow_is_rejected_not_500(client: httpx.AsyncClient) -> None:
+    """Pentest regression: a value exceeding NUMERIC(10,2) must 422 at the API,
+    not reach the DB and raise an unhandled NumericValueOutOfRangeError (500)."""
+    h = await _auth(client)
+    over = await client.post("/api/v1/budgets", headers=h,
+                             json={"category": "SHOPPING", "monthly_limit": "99999999999999999999"})
+    assert over.status_code == 422
+    # The exact ceiling is still accepted (valid Plaid category to isolate the
+    # money bound from the category-enum check).
+    at_cap = await client.post("/api/v1/budgets", headers=h,
+                               json={"category": "ENTERTAINMENT", "monthly_limit": "99999999.99"})
+    assert at_cap.status_code == 201, at_cap.text
+
+
+async def test_goal_past_target_date_is_rejected(client: httpx.AsyncClient) -> None:
+    """Pentest regression: a deadline in the past is meaningless and skews the
+    monthly-target math — must be rejected."""
+    h = await _auth(client)
+    r = await client.post("/api/v1/goals", headers=h,
+                          json={"title": "past", "target_amount": "1000", "target_date": "2000-01-01"})
+    assert r.status_code == 422
+    assert any(e["loc"][-1] == "target_date" for e in r.json()["details"])

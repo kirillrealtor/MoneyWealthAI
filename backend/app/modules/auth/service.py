@@ -108,7 +108,32 @@ async def _dispatch_verification(user_id: str, email: str, tenant_id: str) -> No
         sha256(raw),
         datetime.now(UTC) + VERIFY_TTL,
     )
-    await send_mail(build_verification_email(email, raw))
+    # A mail-provider blip must not fail signup (the account exists; the user
+    # recovers via POST /auth/resend-verification). Log loudly and move on.
+    try:
+        await send_mail(build_verification_email(email, raw))
+    except Exception as err:  # noqa: BLE001
+        logger.error("verification email failed; user can resend", user_id=user_id, error_message=str(err))
+
+
+async def resend_verification(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
+    """Re-issue a verification email. Anti-enumeration: callers always get the
+    same generic response whether or not the account exists / is verified."""
+    tenant = tenant_id or settings.default_tenant_id
+    email_norm = email.lower().strip()
+    if not await verify_turnstile(captcha_token, ctx.ip):
+        raise ApiError("CAPTCHA_REQUIRED")
+
+    async with db.with_tenant(tenant) as conn:
+        row = await conn.fetchrow(
+            "SELECT user_id, is_verified FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
+        )
+    if row is None or row["is_verified"]:
+        return  # silent: don't reveal whether the account exists or its state
+
+    await _dispatch_verification(str(row["user_id"]), email_norm, tenant)
+    await audit("user.verification_resent", user_id=str(row["user_id"]), tenant_id=tenant,
+                resource="user", resource_id=str(row["user_id"]), ip_address=ctx.ip)
 
 
 async def signup(

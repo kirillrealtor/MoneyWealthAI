@@ -85,6 +85,24 @@ async def update_goal(
         )
     if result.split()[-1] == "0":  # "UPDATE 0" / "DELETE 0" -> no row matched
         raise ApiError("NOT_FOUND")
+    
+    if current_amount is not None or target_amount is not None:
+        async with db.with_tenant(tenant_id) as conn:
+            row = await conn.fetchrow(
+                "SELECT target_amount, current_amount FROM goals WHERE goal_id = $1",
+                goal_id,
+            )
+
+        if row:
+            target = target_amount if target_amount is not None else row["target_amount"]
+            current = current_amount if current_amount is not None else row["current_amount"]
+            progress = float(current / target * 100) if target > 0 else 0.0
+
+            await _check_and_record_milestones(
+                tenant_id,
+                goal_id,
+                progress,
+            )
 
 
 async def delete_goal(user_id: str, tenant_id: str, goal_id: str) -> None:
@@ -94,3 +112,19 @@ async def delete_goal(user_id: str, tenant_id: str, goal_id: str) -> None:
         )
     if result.split()[-1] == "0":  # "UPDATE 0" / "DELETE 0" -> no row matched
         raise ApiError("NOT_FOUND")
+    
+async def _check_and_record_milestones(tenant_id: str, goal_id: str, progress_pct: float) -> None:
+    milestones = [25, 50, 75, 100]
+    async with db.with_tenant(tenant_id) as conn:
+        for ms in milestones:
+            if progress_pct >= ms:
+                exists = await conn.fetchval(
+                    "SELECT 1 FROM goal_milestones WHERE goal_id = $1 AND milestone_pct = $2",
+                    goal_id, ms,
+                )
+                if not exists:
+                    await conn.execute(
+                        """INSERT INTO goal_milestones (goal_id, tenant_id, milestone_pct, achieved_at, notified)
+                           VALUES ($1, $2, $3, NOW(), false)""",
+                        goal_id, tenant_id, ms,
+                    )

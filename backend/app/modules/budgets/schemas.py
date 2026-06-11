@@ -1,15 +1,21 @@
 """Pydantic models for the budgets API."""
 from __future__ import annotations
-
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+PLAID_CATEGORIES = Literal[
+    "FOOD_AND_DRINK", "SHOPPING", "ENTERTAINMENT", "TRANSPORTATION",
+    "TRAVEL", "TRANSFER", "FEES", "TAXES", "LOANS_AND_MORTGAGES",
+    "BANK_FEES", "FINANCIAL", "PERSONAL_FINANCE", "UNCATEGORIZED", "PERSONAL",
+]
 
 class BudgetCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    category: PLAID_CATEGORIES
 
-    category: str = Field(min_length=1, max_length=100)
+    #category: str = Field(min_length=1, max_length=100)
     monthly_limit: Decimal = Field(gt=0)
     alert_at_pct: int = Field(default=80, ge=1, le=100)
 

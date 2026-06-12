@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   FATHOM — Design system  ·  "Intelligent Calm"
+   Dark-first, agentic fintech. Deep ink canvas, aurora brand light, glass
+   surfaces, tabular money, restrained spring motion. No generic dashboard grays.
+   ========================================================================== */
+
+@theme {
+  /* ---- Brand & accent ---------------------------------------------------- */
+  --color-brand: #19e6a0;          /* vivid mint — the signature */
+  --color-brand-soft: #0e7c5a;
+  --color-iris: #7c8bff;           /* electric counterpoint */
+  --color-sky: #38bdf8;
+
+  /* ---- Ink canvas & surfaces (not flat gray) ----------------------------- */
+  --color-ink: #06090f;            /* page canvas */
+  --color-ink-2: #080c14;
+  --color-surface: #0c111c;        /* raised panel base */
+  --color-surface-2: #111827;
+  --color-elevated: #151d2e;
+
+  /* ---- Text -------------------------------------------------------------- */
+  --color-fg: #eaf0f8;
+  --color-fg-muted: #93a1b8;
+  --color-fg-subtle: #5d6b82;
+
+  /* ---- Lines ------------------------------------------------------------- */
+  --color-line: rgba(255, 255, 255, 0.07);
+  --color-line-strong: rgba(255, 255, 255, 0.12);
+
+  /* ---- Finance data colors (semantic; pair with +/- glyphs) -------------- */
+  --color-positive: #34e3a5;
+  --color-negative: #ff7a6b;       /* warm coral, not harsh red */
+  --color-warning: #fbbf24;
+  --color-neutral: #6b7a92;
+
+  /* ---- Radii ------------------------------------------------------------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  /* ---- Fonts (wired in layout.tsx) --------------------------------------- */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-display), Georgia, serif;
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- Animations -------------------------------------------------------- */
+  --animate-aurora: aurora 22s ease-in-out infinite;
+  --animate-rise: rise 0.6s var(--ease-spring) both;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-think: think 1.4s ease-in-out infinite;
+  --animate-float: float 8s ease-in-out infinite;
+}
+
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(6%, -4%, 0) scale(1.12); }
+  66% { transform: translate3d(-5%, 5%, 0) scale(0.95); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+@keyframes think {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* ----------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+:root { color-scheme: dark; }
+
+* { border-color: var(--color-line); }
+
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* All numerals tabular by default so money never jitters. */
+.tnum, .font-mono { font-variant-numeric: tabular-nums; }
+
+::selection { background: color-mix(in oklab, var(--color-brand) 35%, transparent); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Signature utilities — the look
+   -------------------------------------------------------------------------- */
+
+/* Glass panel: translucent surface, light-catching border, inner sheen */
+@utility glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
+    color-mix(in oklab, var(--color-surface) 86%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--color-line);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 20px 50px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* Hairline ring that catches aurora light */
+@utility ring-glow {
+  box-shadow:
+    0 0 0 1px var(--color-line-strong),
+    0 0 40px -12px color-mix(in oklab, var(--color-brand) 55%, transparent);
+}
+
+/* Brand text gradient */
+@utility text-aurora {
+  background: linear-gradient(100deg, var(--color-brand), var(--color-sky) 55%, var(--color-iris));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Shimmering skeleton */
+@utility skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-2) 37%,
+    var(--color-surface) 63%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+  border-radius: var(--radius-md);
+}

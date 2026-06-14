@@ -16,7 +16,7 @@ export type NavItem = { href: string; label: string; icon: LucideIcon; enabled: 
 /** Single source of truth for the app navigation (sidebar + mobile drawer). */
 export const NAV: NavItem[] = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard, enabled: true },
-  { href: "/app/accounts", label: "Accounts", icon: Landmark, enabled: false },
+  { href: "/app/accounts", label: "Accounts", icon: Landmark, enabled: true },
   { href: "/app/budgets", label: "Budgets", icon: Wallet, enabled: true },
   { href: "/app/goals", label: "Goals", icon: Target, enabled: true },
   { href: "/app/debt", label: "Debt", icon: TrendingDown, enabled: true },

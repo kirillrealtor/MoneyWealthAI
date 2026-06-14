@@ -21,11 +21,13 @@ export function proxy(request: NextRequest) {
 
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    // cdn.plaid.com is a CSP2 fallback (ignored under strict-dynamic, where the
+    // nonced Plaid Link bundle loads it via trust propagation).
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cdn.plaid.com${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data: https:",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://*.plaid.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

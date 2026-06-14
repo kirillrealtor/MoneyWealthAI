@@ -8,7 +8,7 @@ from app.errors import ApiError
 
 
 async def list_notifications(user_id: str, tenant_id: str, limit: int = 50) -> dict[str, Any]:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await conn.fetch(
             """SELECT alert_id, type, title, body, severity, is_read, created_at
                  FROM alerts WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2""",
@@ -23,7 +23,7 @@ async def list_notifications(user_id: str, tenant_id: str, limit: int = 50) -> d
 
 
 async def mark_read(user_id: str, tenant_id: str, alert_id: str) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         result = await conn.execute(
             "UPDATE alerts SET is_read = true WHERE alert_id = $1 AND user_id = $2", alert_id, user_id
         )
@@ -32,7 +32,7 @@ async def mark_read(user_id: str, tenant_id: str, alert_id: str) -> None:
 
 
 async def mark_all_read(user_id: str, tenant_id: str) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         await conn.execute(
             "UPDATE alerts SET is_read = true WHERE user_id = $1 AND is_read = false", user_id
         )

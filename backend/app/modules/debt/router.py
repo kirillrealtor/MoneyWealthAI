@@ -12,7 +12,8 @@ from .schemas import DebtSummary, PayoffComparison, PayoffRequest
 router = APIRouter(prefix="/api/v1/debt", tags=["debt"])
 
 
-@router.get("", response_model=DebtSummary)
+@router.get("", response_model=DebtSummary,
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
 async def summary(user: CurrentUser = Depends(require_auth)) -> DebtSummary:
     return DebtSummary(**await service.get_summary(user.user_id, user.tenant_id))
 

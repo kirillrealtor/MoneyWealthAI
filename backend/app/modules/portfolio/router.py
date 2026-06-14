@@ -12,7 +12,8 @@ from .schemas import PortfolioSummary, RebalanceRequest, RebalanceResponse
 router = APIRouter(prefix="/api/v1/portfolio", tags=["portfolio"])
 
 
-@router.get("", response_model=PortfolioSummary)
+@router.get("", response_model=PortfolioSummary,
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
 async def summary(user: CurrentUser = Depends(require_auth)) -> PortfolioSummary:
     return PortfolioSummary(**await service.get_summary(user.user_id, user.tenant_id))
 

@@ -13,6 +13,7 @@ from app.db import close_pool, init_pool
 from app.errors import register_exception_handlers
 from app.logging_conf import configure_logging, logger
 from app.middleware import SecurityMiddleware, TracingMiddleware
+from app.modules.admin.router import router as admin_router
 from app.modules.advisor.router import router as advisor_router
 from app.modules.auth.router import router as auth_router
 from app.modules.budgets.router import router as budgets_router
@@ -28,12 +29,29 @@ from app.redis_client import close_redis
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    import asyncio
+
     configure_logging()
     await init_pool()
     logger.info("server starting", service="api", port=settings.port, env=settings.env)
+
+    # Optional in-process sync worker for single-node/dev. Production runs a
+    # dedicated fleet (`python -m scripts.worker`) and leaves this off so the
+    # web tier never does background work.
+    worker_stop: asyncio.Event | None = None
+    worker_task: asyncio.Task[None] | None = None
+    if settings.sync_worker_enabled:
+        from app.modules.plaid.worker import run_worker_loop
+
+        worker_stop = asyncio.Event()
+        worker_task = asyncio.create_task(run_worker_loop(stop=worker_stop))
+
     try:
         yield
     finally:
+        if worker_stop is not None and worker_task is not None:
+            worker_stop.set()
+            await worker_task
         await close_pool()
         await close_redis()
         logger.info("server stopped", service="api")
@@ -68,6 +86,7 @@ def create_app() -> FastAPI:
     app.include_router(debt_router)
     app.include_router(portfolio_router)
     app.include_router(notifications_router)
+    app.include_router(admin_router)
     return app
 
 

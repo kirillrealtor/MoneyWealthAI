@@ -4,7 +4,6 @@ Access tokens are encrypted at rest and only decrypted in-memory for API calls.
 """
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from app import db
@@ -14,7 +13,8 @@ from app.errors import ApiError
 from app.integrations.plaid_client import get_plaid
 from app.logging_conf import logger
 
-from .sync import run_sync_for_item, to_money
+from .sync import to_money
+from .worker import enqueue_sync
 
 
 async def create_link_token(user_id: str) -> dict[str, Any]:
@@ -88,8 +88,9 @@ async def exchange_public_token(user_id: str, tenant_id: str, public_token: str,
         metadata={"institution_id": institution_id, "accounts": len(accounts)},
     )
 
-    # 4. Kick off the historical transaction sync in the background.
-    _spawn_sync(str(item_id), tenant_id, user_id)
+    # 4. Durably enqueue the historical transaction sync (drained by the worker
+    #    fleet); survives a restart and never blocks this request.
+    await enqueue_sync(str(item_id), tenant_id, user_id)
 
     return {"item_id": str(item_id), "institution_name": None, "accounts_linked": len(accounts)}
 
@@ -161,35 +162,3 @@ async def disconnect_item(user_id: str, tenant_id: str, item_id: str, ip: str | 
 
     await audit("plaid.item_disconnected", user_id=user_id, tenant_id=tenant_id,
                 resource="plaid_item", resource_id=item_id, ip_address=ip)
-
-
-# Bounds in-process background syncs so a burst of webhooks / relinks can't
-# spawn unbounded tasks and exhaust the DB pool or memory. Cross-instance
-# de-duplication is handled by the Redis per-item lock in sync.py.
-# (Production replaces this whole mechanism with SQS + a worker fleet.)
-_MAX_CONCURRENT_SYNCS = 5
-_sync_semaphore = asyncio.Semaphore(_MAX_CONCURRENT_SYNCS)
-_background_tasks: set[asyncio.Task[Any]] = set()
-
-
-async def _guarded_sync(item_id: str, tenant_id: str, user_id: str) -> None:
-    async with _sync_semaphore:
-        await run_sync_for_item(item_id, tenant_id, user_id)
-
-
-def _spawn_sync(item_id: str, tenant_id: str, user_id: str) -> None:
-    """Fire-and-forget background sync, bounded by a semaphore. NOTE: production
-    swaps this for an SQS enqueue so syncs run on a dedicated worker fleet."""
-    task = asyncio.create_task(_guarded_sync(item_id, tenant_id, user_id))
-    # Keep a strong ref so the task isn't GC'd mid-flight; log any failure.
-    _background_tasks.add(task)
-    task.add_done_callback(_background_tasks.discard)
-
-    def _log_failure(t: asyncio.Task[Any]) -> None:
-        if t.cancelled():
-            return
-        exc = t.exception()
-        if exc is not None:
-            logger.error("background sync failed", error_message=str(exc))
-
-    task.add_done_callback(_log_failure)

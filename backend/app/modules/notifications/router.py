@@ -5,16 +5,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.deps import CurrentUser, require_auth
+from app.config import settings
+from app.deps import CurrentUser, rate_limit, require_auth
 from app.notifications.preferences import load_preferences, update_preferences
 
 from . import service
 from .schemas import MessageResponse, NotificationList, PreferencesOut, PreferencesUpdate
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
+_read_limit = Depends(rate_limit("read", settings.rate_limit_read_per_min))
 
 
-@router.get("", response_model=NotificationList)
+@router.get("", response_model=NotificationList, dependencies=[_read_limit])
 async def list_notifications(user: CurrentUser = Depends(require_auth)) -> NotificationList:
     return NotificationList(**await service.list_notifications(user.user_id, user.tenant_id))
 
@@ -31,7 +33,7 @@ async def mark_all_read(user: CurrentUser = Depends(require_auth)) -> MessageRes
     return MessageResponse(message="All notifications marked read.")
 
 
-@router.get("/preferences", response_model=PreferencesOut)
+@router.get("/preferences", response_model=PreferencesOut, dependencies=[_read_limit])
 async def get_preferences(user: CurrentUser = Depends(require_auth)) -> PreferencesOut:
     prefs = await load_preferences(user.user_id, user.tenant_id)
     return PreferencesOut(**{k: prefs[k] for k in PreferencesOut.model_fields})

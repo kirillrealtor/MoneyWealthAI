@@ -87,7 +87,7 @@ async def require_verified(user: CurrentUser = Depends(require_auth)) -> Current
     bank data should depend on this. Building block for Phase 2+ routes:
     `Depends(require_verified)`.
     """
-    async with db.with_tenant(user.tenant_id) as conn:
+    async with db.with_tenant(user.tenant_id, user.user_id) as conn:
         verified = await conn.fetchval("SELECT is_verified FROM users WHERE user_id = $1", user.user_id)
     if not verified:
         raise ApiError("FORBIDDEN", details={"reason": "Email verification required."})

@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = Field(default=12, ge=10, le=15)
     jwt_issuer: str = "financial-advisor"
     jwt_audience: str = "financial-advisor-api"
+    # Admin tokens use a DISTINCT audience so a user token can never reach an
+    # admin route (and vice-versa), even though they share the signing secret.
+    admin_jwt_audience: str = "financial-advisor-admin"
+    admin_access_token_ttl: int = 1800  # 30 min — admin sessions are short-lived
 
     app_base_url: str = "http://localhost:3000"
     cookie_domain: str = "localhost"
@@ -59,6 +63,19 @@ class Settings(BaseSettings):
     sendgrid_api_key: str | None = None
 
     @model_validator(mode="after")
+    def _check_prod_hardening(self) -> Settings:
+        # A wildcard Host allowlist is fine in dev but enables Host-header
+        # injection in production (poisoned reset links, cache poisoning), so
+        # fail at startup rather than ship a permissive instance. CORS is left
+        # unchecked on purpose: the first-party Next BFF is same-origin, so an
+        # empty CORS_ORIGINS is the correct production default.
+        if self.env == "production" and "*" in self.allowed_hosts_list:
+            raise ValueError(
+                "ALLOWED_HOSTS must be an explicit comma-separated allowlist in production (not '*')"
+            )
+        return self
+
+    @model_validator(mode="after")
     def _check_mail_transport(self) -> Settings:
         # Fail at startup, not at first signup: a half-configured transport
         # would otherwise surface as users who never get their verify email.
@@ -77,6 +94,19 @@ class Settings(BaseSettings):
 
     rate_limit_general_per_min: int = 100
     rate_limit_ai_per_min: int = 10
+    # Per-user limit for cheap authenticated reads (dashboards). High enough not
+    # to bother real UIs, low enough to cap scraping/abuse on unmetered GETs.
+    rate_limit_read_per_min: int = 120
+
+    # ---- Background sync worker (durable queue; see migration 010) ----
+    # Production runs a dedicated worker fleet: `python -m scripts.worker`.
+    # Set true to also run one worker in-process with the API (single-node/dev).
+    sync_worker_enabled: bool = False
+    sync_worker_batch: int = 10            # jobs claimed per poll
+    sync_worker_concurrency: int = 5       # concurrent syncs per worker
+    sync_worker_poll_interval_s: float = 1.0
+    sync_job_max_retries: int = 5          # requeue a failing job up to N times
+    sync_job_stale_seconds: int = 900      # requeue jobs orphaned by a crash after this
 
     # ---- Plaid (banking data) ----
     plaid_env: Literal["sandbox", "development", "production"] = "sandbox"

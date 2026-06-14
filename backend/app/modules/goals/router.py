@@ -5,13 +5,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.deps import CurrentUser, require_auth
+from app.config import settings
+from app.deps import CurrentUser, rate_limit, require_auth
 from app.errors import ApiError
 
 from . import service
 from .schemas import GoalCreate, GoalOut, GoalUpdate, MessageResponse
 
 router = APIRouter(prefix="/api/v1/goals", tags=["goals"])
+_read_limit = Depends(rate_limit("read", settings.rate_limit_read_per_min))
 
 
 @router.post("", response_model=GoalOut, status_code=201)
@@ -28,7 +30,7 @@ async def create(body: GoalCreate, user: CurrentUser = Depends(require_auth)) ->
     return GoalOut(**goal)
 
 
-@router.get("", response_model=list[GoalOut])
+@router.get("", response_model=list[GoalOut], dependencies=[_read_limit])
 async def list_goals(user: CurrentUser = Depends(require_auth)) -> list[GoalOut]:
     return [GoalOut(**g) for g in await service.list_goals(user.user_id, user.tenant_id)]
 

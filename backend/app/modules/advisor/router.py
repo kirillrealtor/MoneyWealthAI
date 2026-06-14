@@ -46,7 +46,8 @@ async def chat(body: ChatRequest, request: Request, user: CurrentUser = Depends(
     )
 
 
-@router.get("/chats/{chat_id}/messages", response_model=list[MessageOut])
+@router.get("/chats/{chat_id}/messages", response_model=list[MessageOut],
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
 async def history(chat_id: UUID, user: CurrentUser = Depends(require_auth)) -> list[MessageOut]:
     async with db.with_tenant(user.tenant_id) as conn:
         owner = await conn.fetchval("SELECT user_id FROM chat_sessions WHERE chat_id = $1", str(chat_id))

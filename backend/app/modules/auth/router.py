@@ -108,10 +108,11 @@ async def logout(request: Request, response: Response) -> MessageResponse:
     return MessageResponse(message="Logged out.")
 
 
-@router.get("/me", response_model=MeResponse)
+@router.get("/me", response_model=MeResponse,
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
 async def me(user: CurrentUser = Depends(require_auth)) -> MeResponse:
     # users is RLS-protected; read within the caller's tenant context.
-    async with db.with_tenant(user.tenant_id) as conn:
+    async with db.with_tenant(user.tenant_id, user.user_id) as conn:
         row = await conn.fetchrow(
             """SELECT user_id, email, full_name, tier, advisor_persona, is_verified, onboarding_step
                  FROM users WHERE user_id = $1""",

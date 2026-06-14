@@ -19,7 +19,7 @@ async def reserve_budget(user_id: str, tenant_id: str, tier: str) -> None:
     """Atomically reserve this turn's estimated tokens; raise if it would exceed
     today's budget (and refund the reservation so it isn't double-counted)."""
     limit = settings.token_budget_for(tier)
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         total = await conn.fetchval(
             """INSERT INTO token_usage (user_id, tenant_id, date, tokens)
                VALUES ($1, $2, CURRENT_DATE, $3)
@@ -39,7 +39,7 @@ async def reserve_budget(user_id: str, tenant_id: str, tier: str) -> None:
 async def settle_usage(user_id: str, tenant_id: str, actual_tokens: int, provider: str) -> None:
     """Reconcile the reservation to the real token count (delta may be negative)."""
     delta = actual_tokens - RESERVE_ESTIMATE
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         await conn.execute(
             """INSERT INTO token_usage (user_id, tenant_id, date, tokens, provider)
                VALUES ($1, $2, CURRENT_DATE, $3, $4)

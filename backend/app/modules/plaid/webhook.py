@@ -97,7 +97,7 @@ async def dispatch_webhook(payload: dict[str, Any]) -> None:
     """Act on a VERIFIED webhook. Resolves the tenant via a SECURITY DEFINER
     function (the one legitimate cross-tenant lookup) then enqueues work."""
     from app import db
-    from app.modules.plaid.service import _spawn_sync
+    from app.modules.plaid.worker import enqueue_sync
 
     webhook_type = payload.get("webhook_type")
     webhook_code = payload.get("webhook_code")
@@ -116,7 +116,7 @@ async def dispatch_webhook(payload: dict[str, Any]) -> None:
 
     _tx_codes = {"SYNC_UPDATES_AVAILABLE", "DEFAULT_UPDATE", "INITIAL_UPDATE"}
     if webhook_type == "TRANSACTIONS" and webhook_code in _tx_codes:
-        _spawn_sync(item_id, tenant_id, user_id)
+        await enqueue_sync(item_id, tenant_id, user_id)
     elif webhook_type == "ITEM" and webhook_code == "ERROR":
         async with db.with_tenant(tenant_id) as conn:
             await conn.execute("UPDATE plaid_items SET item_status = 'error' WHERE item_id = $1", item_id)

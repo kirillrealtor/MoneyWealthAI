@@ -129,17 +129,29 @@ async def fetchval(sql: str, *params: Any) -> Any:
 
 
 @asynccontextmanager
-async def with_tenant(tenant_id: str) -> AsyncIterator[asyncpg.Connection]:
-    """Yield a connection inside a transaction with the tenant context set, so
-    Row-Level Security policies apply (Architecture 6 / schema RLS). The
-    set_config(..., true) makes it transaction-local - safe with pooling.
+async def with_tenant(tenant_id: str, user_id: str | None = None) -> AsyncIterator[asyncpg.Connection]:
+    """Yield a connection inside a transaction with the tenant (and optionally
+    user) context set, so Row-Level Security policies apply (Architecture 6 /
+    schema RLS). The set_config(..., true) makes both transaction-local - safe
+    with pooling.
+
+    Passing user_id activates the per-user RLS backstop (migration 009): rows
+    must then match BOTH tenant and user. Omit it for system paths that
+    legitimately span users (signup, email verification, webhook tenant
+    resolution, cross-user sweeps) — the user policy no-ops when unset. Setting
+    it only ever tightens access, so callers should pass user_id whenever the
+    work belongs to a single authenticated user.
 
     Acquisition is bounded (see _acquire): under pool exhaustion this raises a
     clean 503 rather than blocking the caller indefinitely.
     """
     async with _acquire() as conn:
         async with conn.transaction():
-            await conn.execute("SELECT set_config('app.current_tenant_id', $1, true)", tenant_id)
+            await conn.execute(
+                "SELECT set_config('app.current_tenant_id', $1, true), "
+                "       set_config('app.current_user_id', $2, true)",
+                tenant_id, user_id or "",
+            )
             yield conn
 
 

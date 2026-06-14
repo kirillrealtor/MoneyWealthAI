@@ -24,7 +24,7 @@ async def create_goal(
         target_amount=target_amount, current_amount=current_amount,
         months_remaining=_months_until(target_date),
     )
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         return str(await conn.fetchval(
             """INSERT INTO goals
                    (user_id, tenant_id, title, description, target_amount, current_amount,
@@ -56,7 +56,7 @@ def _to_out(row: Any) -> dict[str, Any]:
 
 
 async def list_goals(user_id: str, tenant_id: str) -> list[dict[str, Any]]:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await conn.fetch(
             """SELECT goal_id, title, description, target_amount, current_amount, target_date,
                       monthly_target, status, priority
@@ -71,7 +71,7 @@ async def update_goal(
     *, title: str | None, target_amount: Decimal | None, current_amount: Decimal | None,
     target_date: date | None, priority: int | None, status: str | None,
 ) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         result = await conn.execute(
             """UPDATE goals SET
                    title = COALESCE($3, title),
@@ -87,7 +87,7 @@ async def update_goal(
         raise ApiError("NOT_FOUND")
     
     if current_amount is not None or target_amount is not None:
-        async with db.with_tenant(tenant_id) as conn:
+        async with db.with_tenant(tenant_id, user_id) as conn:
             row = await conn.fetchrow(
                 "SELECT target_amount, current_amount FROM goals WHERE goal_id = $1",
                 goal_id,
@@ -106,7 +106,7 @@ async def update_goal(
 
 
 async def delete_goal(user_id: str, tenant_id: str, goal_id: str) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         result = await conn.execute(
             "DELETE FROM goals WHERE goal_id = $1 AND user_id = $2", goal_id, user_id
         )
@@ -114,6 +114,8 @@ async def delete_goal(user_id: str, tenant_id: str, goal_id: str) -> None:
         raise ApiError("NOT_FOUND")
     
 async def _check_and_record_milestones(tenant_id: str, goal_id: str, progress_pct: float) -> None:
+    # No user_id in scope here; goal_milestones derives ownership from its goal
+    # (already verified by the caller) and has no per-user policy of its own.
     milestones = [25, 50, 75, 100]
     async with db.with_tenant(tenant_id) as conn:
         for ms in milestones:

@@ -114,7 +114,7 @@ def _f(value: Any) -> float | None:
 # ---------------------------------------------------------------------------
 async def exec_get_account_balances(user_id: str, tenant_id: str, raw: dict[str, Any]) -> dict[str, Any]:
     args = BalancesInput.model_validate(raw)
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         if args.account_types:
             rows = await conn.fetch(
                 """SELECT pa.name, pa.type, pa.subtype, pa.balance_current, pa.currency_code
@@ -155,7 +155,7 @@ async def exec_get_spending_summary(user_id: str, tenant_id: str, raw: dict[str,
     else:
         where = f"t.date >= CURRENT_DATE - INTERVAL '{_PERIOD_DAYS[args.period]} days'"
 
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await conn.fetch(
             f"""SELECT COALESCE(t.category, 'UNCATEGORIZED') AS category, SUM(t.amount) AS total
                   FROM transactions t
@@ -175,7 +175,7 @@ async def exec_get_spending_summary(user_id: str, tenant_id: str, raw: dict[str,
 async def exec_get_cash_flow(user_id: str, tenant_id: str, raw: dict[str, Any]) -> dict[str, Any]:
     args = CashFlowInput.model_validate(raw)
     months = max(1, min(12, args.months))
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await conn.fetch(
             f"""SELECT to_char(date_trunc('month', t.date), 'YYYY-MM') AS month,
                        ABS(SUM(t.amount) FILTER (WHERE t.amount < 0 AND {_EXCL_TRANSFERS})) AS income,
@@ -258,7 +258,7 @@ async def exec_get_goals_status(user_id: str, tenant_id: str, _raw: dict[str, An
 
 
 async def exec_get_debt_summary(user_id: str, tenant_id: str, _raw: dict[str, Any]) -> dict[str, Any]:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await _fetch_debts(conn, user_id)
     debts = [{"type": r["debt_type"], "balance": _f(r["balance"]), "apr": _f(r["apr"]),
               "minimum_payment": _f(r["minimum_payment"])} for r in rows]
@@ -267,7 +267,7 @@ async def exec_get_debt_summary(user_id: str, tenant_id: str, _raw: dict[str, An
 
 
 async def exec_get_portfolio_summary(user_id: str, tenant_id: str, _raw: dict[str, Any]) -> dict[str, Any]:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await conn.fetch(
             """SELECT ph.asset_class, ph.sector, ph.institution_value, ph.cost_basis
                  FROM portfolio_holdings ph
@@ -316,7 +316,7 @@ async def exec_calculate_affordability(user_id: str, tenant_id: str, raw: dict[s
 
 async def exec_calculate_debt_payoff(user_id: str, tenant_id: str, raw: dict[str, Any]) -> dict[str, Any]:
     args = DebtPayoffInput.model_validate(raw)
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         rows = await _fetch_debts(conn, user_id)
     debts = [Debt(id=str(r["debt_id"]), balance=Decimal(str(r["balance"] or 0)),
                   apr=Decimal(str(r["apr"] or 0)), minimum_payment=Decimal(str(r["minimum_payment"] or 0)))

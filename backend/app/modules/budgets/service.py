@@ -13,7 +13,7 @@ from app.errors import ApiError
 async def create_budget(
     user_id: str, tenant_id: str, *, category: str, monthly_limit: Decimal, alert_at_pct: int
 ) -> str:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         exists = await conn.fetchval(
             "SELECT 1 FROM budgets WHERE user_id = $1 AND category = $2", user_id, category
         )
@@ -30,7 +30,7 @@ async def create_budget(
 
 
 async def list_status(user_id: str, tenant_id: str) -> list[dict[str, Any]]:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         budgets = await conn.fetch(
             """SELECT budget_id, category, monthly_limit, alert_at_pct, is_active
                  FROM budgets WHERE user_id = $1 ORDER BY category""",
@@ -66,7 +66,7 @@ async def update_budget(
     user_id: str, tenant_id: str, budget_id: str,
     *, monthly_limit: Decimal | None, alert_at_pct: int | None, is_active: bool | None,
 ) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         status = await conn.execute(
             """UPDATE budgets SET
                    monthly_limit = COALESCE($3, monthly_limit),
@@ -80,7 +80,7 @@ async def update_budget(
 
 
 async def delete_budget(user_id: str, tenant_id: str, budget_id: str) -> None:
-    async with db.with_tenant(tenant_id) as conn:
+    async with db.with_tenant(tenant_id, user_id) as conn:
         status = await conn.execute(
             "DELETE FROM budgets WHERE budget_id = $1 AND user_id = $2", budget_id, user_id
         )

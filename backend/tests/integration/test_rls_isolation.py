@@ -3,10 +3,16 @@ the non-owner app_user role. Without tenant context, users rows are invisible;
 with context, only that tenant's rows are visible."""
 from __future__ import annotations
 
+import time
+from decimal import Decimal
+
 import asyncpg
+import httpx
 import pytest
 
+from app import db
 from app.config import settings
+from app.modules.budgets import service as budgets
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -50,3 +56,46 @@ async def test_users_scoped_to_tenant_with_context() -> None:
             assert all(str(r["tenant_id"]) == DEFAULT_TENANT for r in rows)
     finally:
         await conn.close()
+
+
+async def _signup(c: httpx.AsyncClient) -> str:
+    email = f"rls+{int(time.time()*1_000_000)}@example.com"
+    r = await c.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
+    assert r.status_code == 201, r.text
+    return r.json()["user_id"]
+
+
+async def test_user_rls_backstop_hides_other_users_rows_in_same_tenant(client: httpx.AsyncClient) -> None:
+    """Two users in the SAME tenant: with a user in context, the per-user RLS
+    backstop (migration 009) hides the other user's rows even though the tenant
+    matches — so a query that forgets `WHERE user_id` can't leak across users.
+    Without a user in context, tenant RLS alone still shows both (proving the
+    backstop is what's doing the user-level filtering)."""
+    user_a = await _signup(client)
+    user_b = await _signup(client)
+
+    await budgets.create_budget(
+        user_a, DEFAULT_TENANT, category="dining_a", monthly_limit=Decimal("100"), alert_at_pct=80)
+    await budgets.create_budget(
+        user_b, DEFAULT_TENANT, category="dining_b", monthly_limit=Decimal("100"), alert_at_pct=80)
+
+    # With user A in context: a deliberately unscoped SELECT sees ONLY A's rows.
+    async with db.with_tenant(DEFAULT_TENANT, user_a) as conn:
+        cats = {r["category"] for r in await conn.fetch("SELECT category FROM budgets")}
+    assert "dining_a" in cats
+    assert "dining_b" not in cats  # backstop hid user B's row
+
+    # Tenant-only context (no user): the same unscoped SELECT sees both, proving
+    # the user GUC — not the tenant policy — is enforcing user isolation.
+    async with db.with_tenant(DEFAULT_TENANT) as conn:
+        cats_all = {r["category"] for r in await conn.fetch("SELECT category FROM budgets")}
+    assert {"dining_a", "dining_b"} <= cats_all
+
+    # WITH CHECK: user A cannot write a row owned by user B.
+    with pytest.raises(asyncpg.PostgresError):
+        async with db.with_tenant(DEFAULT_TENANT, user_a) as conn:
+            await conn.execute(
+                "INSERT INTO budgets (user_id, tenant_id, category, monthly_limit, alert_at_pct) "
+                "VALUES ($1, $2, 'sneaky', 50, 80)",
+                user_b, DEFAULT_TENANT,
+            )

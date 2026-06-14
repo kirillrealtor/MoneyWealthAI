@@ -5,12 +5,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.deps import CurrentUser, require_auth
+from app.config import settings
+from app.deps import CurrentUser, rate_limit, require_auth
 
 from . import service
 from .schemas import BudgetCreate, BudgetStatus, BudgetUpdate, MessageResponse
 
 router = APIRouter(prefix="/api/v1/budgets", tags=["budgets"])
+# Per-user throttle for cheap authenticated reads (anti-scraping on unmetered GETs).
+_read_limit = Depends(rate_limit("read", settings.rate_limit_read_per_min))
 
 
 @router.post("", response_model=BudgetStatus, status_code=201)
@@ -24,7 +27,7 @@ async def create(body: BudgetCreate, user: CurrentUser = Depends(require_auth)) 
     return BudgetStatus(**created)
 
 
-@router.get("", response_model=list[BudgetStatus])
+@router.get("", response_model=list[BudgetStatus], dependencies=[_read_limit])
 async def list_budgets(user: CurrentUser = Depends(require_auth)) -> list[BudgetStatus]:
     return [BudgetStatus(**s) for s in await service.list_status(user.user_id, user.tenant_id)]
 

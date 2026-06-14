@@ -40,15 +40,50 @@ def to_money(value: Any) -> Decimal | None:
 
 
 async def run_sync_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
-    """Sync transactions for one item. Returns count of new transactions added.
-    Safe to call repeatedly and concurrently."""
+    """Sync one item, managing a self-owned sync_jobs record. Used by direct
+    callers (and tests). The durable worker path uses sync_item_core() instead,
+    because it owns the job lifecycle itself (claim -> run -> terminal/retry).
+    Returns the count of new transactions added; safe to call repeatedly."""
+    sync_id: str | None = None
+    try:
+        async with db.with_tenant(tenant_id) as conn:
+            sync_id = await conn.fetchval(
+                """INSERT INTO sync_jobs (user_id, tenant_id, item_id, status)
+                   VALUES ($1, $2, $3, 'running') RETURNING sync_id""",
+                user_id, tenant_id, item_id,
+            )
+        total_added = await sync_item_core(item_id, tenant_id, user_id)
+        async with db.with_tenant(tenant_id) as conn:
+            await conn.execute(
+                "UPDATE sync_jobs SET status = 'completed', transactions_synced = $1, "
+                "completed_at = NOW() WHERE sync_id = $2",
+                total_added, sync_id,
+            )
+        return total_added
+    except Exception as err:  # noqa: BLE001
+        if sync_id is not None:
+            try:
+                async with db.with_tenant(tenant_id) as conn:
+                    await conn.execute(
+                        "UPDATE sync_jobs SET status = 'failed', error_message = $1 WHERE sync_id = $2",
+                        str(err)[:500], sync_id,
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+        raise
+
+
+async def sync_item_core(item_id: str, tenant_id: str, user_id: str) -> int:
+    """Do the actual Plaid sync for one item WITHOUT touching sync_jobs (the
+    caller owns the job record). Returns count of new transactions added. A
+    fleet-wide Redis lock makes it safe to call concurrently — a second caller
+    for the same item is skipped rather than racing."""
     lock_key = f"plaidsync:{item_id}"
     got_lock = await redis_client.set(lock_key, "1", nx=True, ex=_LOCK_TTL_S)
     if not got_lock:
         logger.info("sync already running; skipping", service="plaid-sync", item_id=item_id)
         return 0
 
-    sync_id: str | None = None
     try:
         async with db.with_tenant(tenant_id) as conn:
             item = await conn.fetchrow(
@@ -58,11 +93,6 @@ async def run_sync_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
                 return 0
             accounts = await conn.fetch(
                 "SELECT account_id, plaid_account_id FROM plaid_accounts WHERE item_id = $1", item_id
-            )
-            sync_id = await conn.fetchval(
-                """INSERT INTO sync_jobs (user_id, tenant_id, item_id, status, cursor)
-                   VALUES ($1, $2, $3, 'running', $4) RETURNING sync_id""",
-                user_id, tenant_id, item_id, item["cursor"],
             )
 
         acct_map = {a["plaid_account_id"]: a["account_id"] for a in accounts}
@@ -123,28 +153,13 @@ async def run_sync_for_item(item_id: str, tenant_id: str, user_id: str) -> int:
             cursor = next_cursor
             total_added += len(added)
 
-        async with db.with_tenant(tenant_id) as conn:
-            await conn.execute(
-                """UPDATE sync_jobs SET status = 'completed', transactions_synced = $1,
-                       cursor = $2, completed_at = NOW() WHERE sync_id = $3""",
-                total_added, cursor, sync_id,
-            )
         await audit("plaid.sync_completed", user_id=user_id, tenant_id=tenant_id,
                     resource="plaid_item", resource_id=item_id, metadata={"added": total_added})
         logger.info("sync completed", service="plaid-sync", item_id=item_id, added=total_added)
         return total_added
 
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:  # noqa: BLE001 - logged; job status owned by caller
         logger.error("sync failed", service="plaid-sync", item_id=item_id, error_message=str(err))
-        if sync_id is not None:
-            try:
-                async with db.with_tenant(tenant_id) as conn:
-                    await conn.execute(
-                        "UPDATE sync_jobs SET status = 'failed', error_message = $1 WHERE sync_id = $2",
-                        str(err)[:500], sync_id,
-                    )
-            except Exception:  # noqa: BLE001
-                pass
         raise
     finally:
         await redis_client.delete(lock_key)

@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Keep the authenticated app and BFF out of search indexes.
-      disallow: ["/app", "/api", "/login", "/signup"],
+      disallow: ["/app", "/admin", "/api", "/login", "/signup"],
     },
     sitemap: `${APP_URL}/sitemap.xml`,
   };

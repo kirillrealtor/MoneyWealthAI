@@ -3,8 +3,33 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
+from app.config import Settings
 from app.modules.auth.service import _captcha_key, _lock_key
 from app.modules.plaid.sync import to_money
+
+_BASE_ENV = {
+    "database_url": "postgres://u:p@localhost:5433/db",
+    "redis_url": "redis://localhost:6380",
+    "jwt_access_secret": "x" * 32,
+    "jwt_refresh_secret": "y" * 32,
+}
+
+
+def test_prod_rejects_wildcard_allowed_hosts() -> None:
+    with pytest.raises(ValueError, match="ALLOWED_HOSTS"):
+        Settings(env="production", allowed_hosts="*", **_BASE_ENV)  # type: ignore[arg-type]
+
+
+def test_prod_accepts_explicit_allowed_hosts() -> None:
+    s = Settings(env="production", allowed_hosts="api.fathom.app,fathom.app", **_BASE_ENV)  # type: ignore[arg-type]
+    assert "*" not in s.allowed_hosts_list
+
+
+def test_dev_still_allows_wildcard_hosts() -> None:
+    s = Settings(env="development", allowed_hosts="*", **_BASE_ENV)  # type: ignore[arg-type]
+    assert s.allowed_hosts_list == ["*"]
 
 
 def test_to_money_avoids_float_error() -> None:

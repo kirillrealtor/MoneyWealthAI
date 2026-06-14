@@ -12,6 +12,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 
+from app.config import settings
 from app.deps import CurrentUser, rate_limit, require_auth, require_verified
 from app.errors import ApiError
 
@@ -48,7 +49,8 @@ async def exchange(body: ExchangeRequest, request: Request,
     return ExchangeResponse(**result)
 
 
-@router.get("/items", response_model=list[ItemSummary])
+@router.get("/items", response_model=list[ItemSummary],
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
 async def list_items(user: CurrentUser = Depends(require_auth)) -> list[ItemSummary]:
     items = await service.list_items(user.user_id, user.tenant_id)
     return [ItemSummary(**it) for it in items]

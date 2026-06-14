@@ -37,9 +37,11 @@ export default function DashboardPage() {
             <span className="font-display italic text-aurora">.</span>
           </h1>
         </div>
-        <Button variant="secondary" size="sm">
-          <Plus className="size-4" /> Connect a bank
-        </Button>
+        <Link href="/app/accounts">
+          <Button variant="secondary" size="sm">
+            <Plus className="size-4" /> Connect a bank
+          </Button>
+        </Link>
       </div>
 
       {/* real summaries */}
@@ -99,9 +101,11 @@ export default function DashboardPage() {
             spending and advisor fill in with real numbers.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button>
-              <Landmark className="size-4" /> Connect a bank <ArrowRight className="size-4" />
-            </Button>
+            <Link href="/app/accounts">
+              <Button>
+                <Landmark className="size-4" /> Connect a bank <ArrowRight className="size-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </Panel>

@@ -44,6 +44,12 @@ def _make_fake_plaid(account_pid: str) -> object:
                 return page
             return {"added": [], "modified": [], "removed": [], "has_more": False, "next_cursor": cursor}
 
+        async def liabilities_get(self, token: str):  # type: ignore[no-untyped-def]
+            return {"accounts": [], "liabilities": {}}
+
+        async def investments_holdings_get(self, token: str):  # type: ignore[no-untyped-def]
+            return {"accounts": [], "holdings": [], "securities": []}
+
     return _FakePlaid()
 
 

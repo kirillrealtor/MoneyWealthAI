@@ -24,6 +24,7 @@ API_ERRORS: dict[str, dict[str, Any]] = {
     "AI_UNAVAILABLE": {"status": 503, "message": "AI provider temporarily unavailable. Retry in 60s."},
     "SERVICE_BUSY": {"status": 503, "message": "Service is busy. Please retry shortly."},
     "PLAID_ERROR": {"status": 502, "message": "Banking data provider returned an error."},
+    "BILLING_UNAVAILABLE": {"status": 503, "message": "Billing is not configured. Try again later."},
     "INTERNAL_ERROR": {"status": 500, "message": "An unexpected error occurred. Reference request_id in support."},
 }
 

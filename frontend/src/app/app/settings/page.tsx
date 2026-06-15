@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth/context";
 import { usePreferences, useUpdatePreferences } from "@/lib/api/notifications";
 import type { Preferences } from "@/lib/api/types";
+import { BillingCard } from "@/components/billing/billing-card";
 
 const TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -49,6 +50,9 @@ export default function SettingsPage() {
           {user?.is_verified && <Badge tone="positive">Verified</Badge>}
         </div>
       </Panel>
+
+      {/* Billing */}
+      <BillingCard />
 
       {/* Notifications */}
       <Panel>

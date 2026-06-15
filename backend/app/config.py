@@ -53,6 +53,19 @@ class Settings(BaseSettings):
     # ---- Email ----
     # console = log instead of sending (dev). smtp = any SMTP provider (Gmail,
     # Amazon SES SMTP endpoint, Mailgun, ...). sendgrid = SendGrid HTTP API.
+    # ---- Billing (Stripe) ----
+    # All server-only. Price IDs come from the Stripe dashboard (one per
+    # plan x interval). Leave blank to keep billing endpoints returning a clean
+    # "not configured" error (display-only tiers).
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_price_plus_monthly: str | None = None
+    stripe_price_plus_annual: str | None = None
+    stripe_price_premium_monthly: str | None = None
+    stripe_price_premium_annual: str | None = None
+    # Where Stripe Checkout / the Customer Portal send the user back (frontend).
+    web_app_url: str = "http://localhost:3100"
+
     mail_transport: Literal["console", "smtp", "sendgrid"] = "console"
     mail_from: str = "no-reply@financialadvisor.local"
     smtp_host: str | None = None
@@ -143,6 +156,18 @@ class Settings(BaseSettings):
     token_budget_free: int = 10_000
     token_budget_plus: int = 100_000
     token_budget_premium: int = 500_000
+
+    @property
+    def stripe_configured(self) -> bool:
+        return bool(self.stripe_secret_key)
+
+    def stripe_price_id(self, plan: str, interval: str) -> str | None:
+        return {
+            ("plus", "monthly"): self.stripe_price_plus_monthly,
+            ("plus", "annual"): self.stripe_price_plus_annual,
+            ("premium", "monthly"): self.stripe_price_premium_monthly,
+            ("premium", "annual"): self.stripe_price_premium_annual,
+        }.get((plan, interval))
 
     @property
     def plaid_configured(self) -> bool:

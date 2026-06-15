@@ -16,12 +16,53 @@ from typing import Any
 
 from app import db
 from app.audit import audit
+from app.config import settings
 from app.encryption import decrypt
+from app.errors import ApiError
 from app.integrations.plaid_client import get_plaid
 from app.logging_conf import logger
 from app.redis_client import redis_client
 
 _LOCK_TTL_S = 600
+
+# Plaid security `type` -> the portfolio dashboard's allocation buckets.
+_ASSET_CLASS = {
+    "equity": "equity",
+    "etf": "equity",
+    "mutual fund": "equity",
+    "fixed income": "fixed_income",
+    "cash": "cash",
+    "money market": "cash",
+}
+
+
+def _pct_to_fraction(pct: Any) -> Decimal | None:
+    """Plaid returns APR/interest as a PERCENTAGE (e.g. 24.99). debt_accounts.apr
+    is NUMERIC(6,4) and the calc engine expects a FRACTION (0.2499) — divide by
+    100, or every interest/payoff figure would be 100x wrong."""
+    if pct is None:
+        return None
+    return (Decimal(str(pct)) / Decimal(100)).quantize(Decimal("0.0001"))
+
+
+def _num(value: Any, places: str = "0.000001") -> Decimal | None:
+    if value is None:
+        return None
+    return Decimal(str(value)).quantize(Decimal(places))
+
+
+def _asset_class(plaid_type: Any) -> str:
+    return _ASSET_CLASS.get(str(plaid_type or "").lower(), "alternative")
+
+
+def _pick_apr(aprs: Any) -> Decimal | None:
+    """Choose the most representative APR from a credit card's apr list."""
+    items = aprs or []
+    if not items:
+        return None
+    purchase = next((a for a in items if a.get("apr_type") == "purchase_apr"), None)
+    chosen = purchase or items[0]
+    return _pct_to_fraction(chosen.get("apr_percentage"))
 
 
 def _parse_date(value: Any) -> date | None:
@@ -153,6 +194,14 @@ async def sync_item_core(item_id: str, tenant_id: str, user_id: str) -> int:
             cursor = next_cursor
             total_added += len(added)
 
+        # Liabilities (-> debt) and investments (-> portfolio). Each is best-effort:
+        # an item without that product, or a transient Plaid error, must not fail
+        # the transaction sync that already succeeded.
+        if "liabilities" in settings.plaid_products_list:
+            await _sync_liabilities(token, acct_map, tenant_id)
+        if "investments" in settings.plaid_products_list:
+            await _sync_investments(token, acct_map, tenant_id)
+
         await audit("plaid.sync_completed", user_id=user_id, tenant_id=tenant_id,
                     resource="plaid_item", resource_id=item_id, metadata={"added": total_added})
         logger.info("sync completed", service="plaid-sync", item_id=item_id, added=total_added)
@@ -163,3 +212,83 @@ async def sync_item_core(item_id: str, tenant_id: str, user_id: str) -> int:
         raise
     finally:
         await redis_client.delete(lock_key)
+
+
+async def _sync_liabilities(token: str, acct_map: dict[str, Any], tenant_id: str) -> None:
+    """Snapshot credit cards / student loans / mortgages into debt_accounts."""
+    try:
+        resp = await get_plaid().liabilities_get(token)
+    except ApiError as err:
+        logger.info("liabilities unavailable; skipping", service="plaid-sync", error_message=str(err))
+        return
+
+    balances = {a["account_id"]: (a.get("balances") or {}).get("current") for a in resp.get("accounts", [])}
+    liab = resp.get("liabilities") or {}
+    rows: list[tuple[Any, ...]] = []
+
+    def add(plaid_aid: Any, apr: Decimal | None, minimum: Any, last_pay: Any, kind: str) -> None:
+        aid = acct_map.get(plaid_aid)
+        if aid is None:
+            return
+        rows.append((aid, tenant_id, to_money(balances.get(plaid_aid)), apr,
+                     to_money(minimum), _parse_date(last_pay), kind))
+
+    for c in liab.get("credit") or []:
+        add(c.get("account_id"), _pick_apr(c.get("aprs")), c.get("minimum_payment_amount"),
+            c.get("last_payment_date"), "credit")
+    for s in liab.get("student") or []:
+        add(s.get("account_id"), _pct_to_fraction(s.get("interest_rate_percentage")),
+            s.get("minimum_payment_amount"), s.get("last_payment_date"), "student")
+    for m in liab.get("mortgage") or []:
+        add(m.get("account_id"), _pct_to_fraction((m.get("interest_rate") or {}).get("percentage")),
+            m.get("next_monthly_payment"), m.get("last_payment_date"), "mortgage")
+
+    if not rows:
+        return
+    account_ids = list({r[0] for r in rows})
+    async with db.with_tenant(tenant_id) as conn:
+        await conn.execute("DELETE FROM debt_accounts WHERE account_id = ANY($1::uuid[])", account_ids)
+        await conn.executemany(
+            """INSERT INTO debt_accounts
+                   (account_id, tenant_id, balance, apr, minimum_payment, last_payment_at, debt_type, synced_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())""",
+            rows,
+        )
+    logger.info("liabilities synced", service="plaid-sync", debts=len(rows))
+
+
+async def _sync_investments(token: str, acct_map: dict[str, Any], tenant_id: str) -> None:
+    """Snapshot investment holdings into portfolio_holdings."""
+    try:
+        resp = await get_plaid().investments_holdings_get(token)
+    except ApiError as err:
+        logger.info("investments unavailable; skipping", service="plaid-sync", error_message=str(err))
+        return
+
+    securities = {s["security_id"]: s for s in resp.get("securities", [])}
+    rows: list[tuple[Any, ...]] = []
+    for h in resp.get("holdings", []):
+        aid = acct_map.get(h.get("account_id"))
+        if aid is None:
+            continue
+        sec = securities.get(h.get("security_id"), {})
+        rows.append((
+            aid, tenant_id, h.get("security_id"), sec.get("ticker_symbol"), sec.get("name"),
+            _num(h.get("quantity")), to_money(h.get("cost_basis")),
+            _num(h.get("institution_price"), "0.0001"), to_money(h.get("institution_value")),
+            _asset_class(sec.get("type")), sec.get("sector"),
+        ))
+
+    if not rows:
+        return
+    account_ids = list({r[0] for r in rows})
+    async with db.with_tenant(tenant_id) as conn:
+        await conn.execute("DELETE FROM portfolio_holdings WHERE account_id = ANY($1::uuid[])", account_ids)
+        await conn.executemany(
+            """INSERT INTO portfolio_holdings
+                   (account_id, tenant_id, plaid_security_id, ticker, name, quantity, cost_basis,
+                    institution_price, institution_value, asset_class, sector, synced_at)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW())""",
+            rows,
+        )
+    logger.info("investments synced", service="plaid-sync", holdings=len(rows))

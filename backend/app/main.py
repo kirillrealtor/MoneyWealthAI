@@ -16,6 +16,8 @@ from app.middleware import SecurityMiddleware, TracingMiddleware
 from app.modules.admin.router import router as admin_router
 from app.modules.advisor.router import router as advisor_router
 from app.modules.auth.router import router as auth_router
+from app.modules.billing.router import router as billing_router
+from app.modules.billing.router import webhook_router as billing_webhook_router
 from app.modules.budgets.router import router as budgets_router
 from app.modules.debt.router import router as debt_router
 from app.modules.goals.router import router as goals_router
@@ -87,6 +89,8 @@ def create_app() -> FastAPI:
     app.include_router(portfolio_router)
     app.include_router(notifications_router)
     app.include_router(admin_router)
+    app.include_router(billing_router)
+    app.include_router(billing_webhook_router)
     return app
 
 

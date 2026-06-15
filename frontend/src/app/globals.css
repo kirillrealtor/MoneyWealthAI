@@ -22,8 +22,8 @@
 
   /* ---- Text -------------------------------------------------------------- */
   --color-fg: #eaf0f8;
-  --color-fg-muted: #93a1b8;
-  --color-fg-subtle: #5d6b82;
+  --color-fg-muted: #aab6cb;
+  --color-fg-subtle: #8c99af;   /* WCAG AA (>=4.5:1 on ink + glass surfaces) */
 
   /* ---- Lines ------------------------------------------------------------- */
   --color-line: rgba(255, 255, 255, 0.07);

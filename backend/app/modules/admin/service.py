@@ -104,6 +104,19 @@ async def resync_item(*, admin_id: str, item_id: str, ip: str | None) -> None:
                 metadata={"admin_id": admin_id})
 
 
+async def outbox(status: str | None, limit: int) -> list[dict[str, Any]]:
+    rows = await db.fetch("SELECT * FROM admin_outbox($1, $2)", status, limit)
+    return [{**dict(r), "outbox_id": str(r["outbox_id"])} for r in rows]
+
+
+async def retry_outbox(*, admin_id: str, outbox_id: str, ip: str | None) -> None:
+    row = await db.fetchrow("SELECT * FROM admin_outbox_retry($1)", outbox_id)
+    if row is None:
+        raise ApiError("NOT_FOUND", message="No failed delivery with that id.")
+    await audit("admin.outbox_retry", resource="notification_outbox", ip_address=ip,
+                metadata={"admin_id": admin_id, "outbox_id": outbox_id})
+
+
 async def list_flags() -> list[dict[str, Any]]:
     rows = await db.fetch("SELECT key, enabled, description, updated_at FROM feature_flags ORDER BY key")
     return [dict(r) for r in rows]

@@ -23,6 +23,8 @@ from .schemas import (
     FlagUpdate,
     Kpis,
     MessageResponse,
+    OutboxList,
+    OutboxRow,
 )
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -88,6 +90,24 @@ async def resync(
 ) -> MessageResponse:
     await service.resync_item(admin_id=admin.admin_id, item_id=str(item_id), ip=_ip(request))
     return MessageResponse(message="Re-sync queued.")
+
+
+@router.get("/outbox", response_model=OutboxList)
+async def outbox(
+    _: CurrentAdmin = Depends(require_admin),
+    status: str | None = Query(default=None, max_length=20),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> OutboxList:
+    rows = await service.outbox(status, limit)
+    return OutboxList(items=[OutboxRow(**r) for r in rows])
+
+
+@router.post("/outbox/{outbox_id}/retry", response_model=MessageResponse)
+async def retry_outbox(
+    outbox_id: UUID, request: Request, admin: CurrentAdmin = Depends(require_role("support"))
+) -> MessageResponse:
+    await service.retry_outbox(admin_id=admin.admin_id, outbox_id=str(outbox_id), ip=_ip(request))
+    return MessageResponse(message="Re-queued for delivery.")
 
 
 @router.get("/flags", response_model=list[FlagOut])

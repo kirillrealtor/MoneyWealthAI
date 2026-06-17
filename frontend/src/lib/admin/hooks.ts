@@ -153,6 +153,38 @@ export function useResync() {
   });
 }
 
+export type OutboxRow = {
+  outbox_id: string;
+  channel: string;
+  status: string;
+  attempts: number;
+  error: string | null;
+  created_at: string;
+  sent_at: string | null;
+};
+
+export function useOutbox(status: string) {
+  const get = useGet();
+  return useQuery({
+    queryKey: ["admin", "outbox", status],
+    queryFn: () => get<{ items: OutboxRow[] }>(`/outbox${status ? `?status=${status}` : ""}`),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useRetryOutbox() {
+  const { adminFetch } = useAdmin();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await adminFetch(`/outbox/${id}/retry`, { method: "POST" });
+      if (!res.ok) throw new Error("retry failed");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "outbox"] }),
+  });
+}
+
 export type Flag = { key: string; enabled: boolean; description: string | null; updated_at: string };
 
 export function useFlags() {

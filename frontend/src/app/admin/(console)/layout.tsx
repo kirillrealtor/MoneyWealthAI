@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ShieldCheck, LayoutDashboard, Users, ScrollText, LogOut, Sparkles, Landmark, Flag } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Users, ScrollText, LogOut, Sparkles, Landmark, Flag, Send } from "lucide-react";
 import { useAdmin } from "@/lib/admin/context";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/ai", label: "AI", icon: Sparkles },
   { href: "/admin/plaid", label: "Plaid", icon: Landmark },
   { href: "/admin/flags", label: "Flags", icon: Flag },
+  { href: "/admin/notifications", label: "Outbox", icon: Send },
   { href: "/admin/audit", label: "Audit", icon: ScrollText },
 ];
 

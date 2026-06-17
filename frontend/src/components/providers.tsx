@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/context";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -26,7 +27,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <AnalyticsProvider>{children}</AnalyticsProvider>
+      </AuthProvider>
       <Toaster
         position="bottom-center"
         toastOptions={{

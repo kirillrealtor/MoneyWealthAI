@@ -95,3 +95,16 @@ def build_verification_email(to: str, token: str) -> Mail:
         subject="Verify your email",
         text=f"Welcome! Confirm your email to activate your account:\n\n{url}\n\nThis link expires in 24 hours.",
     )
+
+
+def build_reset_email(to: str, token: str) -> Mail:
+    # Reset link points at the FRONTEND page (web_app_url), which posts the token back.
+    url = f"{settings.web_app_url}/reset-password?token={quote(token, safe='')}"
+    return Mail(
+        to=to,
+        subject="Reset your password",
+        text=(
+            "We received a request to reset your Fathom password. Click below to choose a new one:"
+            f"\n\n{url}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email."
+        ),
+    )

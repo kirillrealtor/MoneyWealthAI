@@ -19,7 +19,7 @@ from app.errors import ApiError
 from app.logging_conf import logger
 from app.redis_client import redis_client
 
-from .mailer import build_verification_email, send_mail
+from .mailer import build_reset_email, build_verification_email, send_mail
 from .tokens import (
     find_live_session,
     find_session_including_revoked,
@@ -198,6 +198,61 @@ async def verify_email(raw_token: str) -> None:
     async with db.with_tenant(str(row["tenant_id"])) as conn:
         await conn.execute("UPDATE users SET is_verified = true WHERE user_id = $1", row["user_id"])
     await audit("user.email_verified", user_id=str(row["user_id"]), resource="user", resource_id=str(row["user_id"]))
+
+
+RESET_TTL = timedelta(hours=1)
+
+
+async def request_password_reset(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
+    """Issue a reset token + email. Anti-enumeration: always the same generic
+    response whether or not the account exists."""
+    tenant = tenant_id or settings.default_tenant_id
+    email_norm = email.lower().strip()
+    if not await verify_turnstile(captcha_token, ctx.ip):
+        raise ApiError("CAPTCHA_REQUIRED")
+
+    async with db.with_tenant(tenant) as conn:
+        row = await conn.fetchrow(
+            "SELECT user_id FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
+        )
+    if row is None:
+        return  # silent — don't reveal whether the email exists
+
+    user_id = str(row["user_id"])
+    raw = random_token(32)
+    await db.execute(
+        """INSERT INTO email_verification_tokens (user_id, tenant_id, token_hash, purpose, expires_at)
+           VALUES ($1, $2, $3, 'reset_password', $4)""",
+        user_id, tenant, sha256(raw), datetime.now(UTC) + RESET_TTL,
+    )
+    try:
+        await send_mail(build_reset_email(email_norm, raw))
+    except Exception as err:  # noqa: BLE001
+        logger.error("reset email failed", user_id=user_id, error_message=str(err))
+    await audit("user.password_reset_requested", user_id=user_id, tenant_id=tenant,
+                resource="user", resource_id=user_id, ip_address=ctx.ip)
+
+
+async def reset_password(raw_token: str, new_password: str, ctx: AuthCtx) -> None:
+    row = await db.fetchrow(
+        """SELECT token_id, user_id, tenant_id FROM email_verification_tokens
+            WHERE token_hash = $1 AND purpose = 'reset_password'
+              AND consumed_at IS NULL AND expires_at > NOW()""",
+        sha256(raw_token),
+    )
+    if not row:
+        raise ApiError("VALIDATION_ERROR", message="Invalid or expired reset link.")
+
+    user_id, tenant = str(row["user_id"]), str(row["tenant_id"])
+    await db.execute("UPDATE email_verification_tokens SET consumed_at = NOW() WHERE token_id = $1", row["token_id"])
+    async with db.with_tenant(tenant, user_id) as conn:
+        await conn.execute(
+            "UPDATE users SET password_hash = $1 WHERE user_id = $2", hash_password(new_password), user_id
+        )
+    # Security: invalidate every existing session after a password change.
+    await revoke_all_sessions(user_id)
+    await audit("user.password_reset", user_id=user_id, tenant_id=tenant,
+                resource="user", resource_id=user_id, ip_address=ctx.ip)
 
 
 async def login(

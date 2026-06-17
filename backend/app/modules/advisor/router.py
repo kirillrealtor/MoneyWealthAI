@@ -12,7 +12,14 @@ from app.config import settings
 from app.deps import CurrentUser, rate_limit, require_auth
 from app.errors import ApiError
 
-from .schemas import ChatRequest, ChatResponse, FeedbackRequest, MessageOut, MessageResponse
+from .schemas import (
+    ChatRequest,
+    ChatResponse,
+    ChatSummary,
+    FeedbackRequest,
+    MessageOut,
+    MessageResponse,
+)
 
 router = APIRouter(prefix="/api/v1/advisor", tags=["advisor"])
 
@@ -44,6 +51,26 @@ async def chat(body: ChatRequest, request: Request, user: CurrentUser = Depends(
         chat_id=result.chat_id, message_id=result.message_id, response=result.response,
         tool_calls_made=result.tool_calls_made, provider=result.provider, tokens_used=result.tokens_used,
     )
+
+
+@router.get("/chats", response_model=list[ChatSummary],
+            dependencies=[Depends(rate_limit("read", settings.rate_limit_read_per_min))])
+async def list_chats(user: CurrentUser = Depends(require_auth)) -> list[ChatSummary]:
+    async with db.with_tenant(user.tenant_id, user.user_id) as conn:
+        rows = await conn.fetch(
+            """SELECT cs.chat_id, cs.started_at,
+                      (SELECT cm.content FROM chat_messages cm
+                        WHERE cm.chat_id = cs.chat_id AND cm.role = 'user'
+                        ORDER BY cm.created_at ASC LIMIT 1) AS preview
+                 FROM chat_sessions cs
+                WHERE cs.user_id = $1
+                ORDER BY cs.started_at DESC LIMIT 30""",
+            user.user_id,
+        )
+    return [
+        ChatSummary(chat_id=str(r["chat_id"]), started_at=r["started_at"], preview=r["preview"])
+        for r in rows
+    ]
 
 
 @router.get("/chats/{chat_id}/messages", response_model=list[MessageOut],

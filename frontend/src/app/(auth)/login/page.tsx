@@ -92,6 +92,12 @@ function LoginForm() {
           />
         </Field>
 
+        <div className="text-right">
+          <Link href="/forgot-password" className="text-xs text-fg-muted hover:text-fg">
+            Forgot password?
+          </Link>
+        </div>
+
         <Button type="submit" className="w-full" size="lg" loading={loading}>
           Log in
         </Button>

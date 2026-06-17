@@ -88,5 +88,18 @@ class AuditList(BaseModel):
     offset: int
 
 
+class FlagOut(BaseModel):
+    key: str
+    enabled: bool
+    description: str | None
+    updated_at: datetime
+
+
+class FlagUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
+
+
 class MessageResponse(BaseModel):
     message: str

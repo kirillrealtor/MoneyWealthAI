@@ -1,6 +1,7 @@
 """Admin HTTP routes — separate audience + server-side RBAC on every endpoint."""
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -18,7 +19,10 @@ from .schemas import (
     AdminUserUpdate,
     AuditList,
     AuditRow,
+    FlagOut,
+    FlagUpdate,
     Kpis,
+    MessageResponse,
 )
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -66,6 +70,37 @@ async def update_user(
         suspended=body.suspended, is_verified=body.is_verified, reason=body.reason, ip=_ip(request),
     )
     return AdminUserDetail(**await service.get_user(str(user_id)))
+
+
+@router.get("/ai")
+async def ai_ops(_: CurrentAdmin = Depends(require_admin)) -> dict[str, Any]:
+    return await service.ai_ops()
+
+
+@router.get("/plaid")
+async def plaid_ops(_: CurrentAdmin = Depends(require_admin)) -> dict[str, Any]:
+    return await service.plaid_ops()
+
+
+@router.post("/plaid/items/{item_id}/resync", response_model=MessageResponse)
+async def resync(
+    item_id: UUID, request: Request, admin: CurrentAdmin = Depends(require_role("support"))
+) -> MessageResponse:
+    await service.resync_item(admin_id=admin.admin_id, item_id=str(item_id), ip=_ip(request))
+    return MessageResponse(message="Re-sync queued.")
+
+
+@router.get("/flags", response_model=list[FlagOut])
+async def flags(_: CurrentAdmin = Depends(require_admin)) -> list[FlagOut]:
+    return [FlagOut(**f) for f in await service.list_flags()]
+
+
+@router.put("/flags/{key}", response_model=FlagOut)
+async def set_flag(
+    key: str, body: FlagUpdate, request: Request, admin: CurrentAdmin = Depends(require_role("owner"))
+) -> FlagOut:
+    flag = await service.set_flag(admin_id=admin.admin_id, key=key, enabled=body.enabled, ip=_ip(request))
+    return FlagOut(**flag)
 
 
 @router.get("/audit", response_model=AuditList)

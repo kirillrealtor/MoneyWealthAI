@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, ArrowUp, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
+import { Sparkles, ArrowUp, ThumbsUp, ThumbsDown, AlertTriangle, History, Plus } from "lucide-react";
 import { Mark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/context";
-import { useSendMessage, useFeedback } from "@/lib/api/advisor";
+import { useSendMessage, useFeedback, useChatList, useChatLoader } from "@/lib/api/advisor";
 import { ApiRequestError } from "@/lib/api/client";
 import { usePrefersReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
@@ -29,7 +30,31 @@ export default function AdvisorPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [chatId, setChatId] = useState<string | undefined>();
   const [input, setInput] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const loadChat = useChatLoader();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  function newChat() {
+    setMessages([]);
+    setChatId(undefined);
+  }
+
+  async function openChat(id: string) {
+    setHistoryOpen(false);
+    try {
+      const msgs = await loadChat(id);
+      setChatId(id);
+      setMessages(
+        msgs.map((m) =>
+          m.role === "assistant"
+            ? { id: m.message_id, role: "assistant", content: m.content, messageId: m.message_id, tools: [], fresh: false }
+            : { id: m.message_id, role: "user", content: m.content },
+        ),
+      );
+    } catch {
+      toast.error("Couldn't load that conversation.");
+    }
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -76,8 +101,17 @@ export default function AdvisorPage() {
           <h1 className="text-2xl font-medium tracking-tight">Advisor</h1>
           <Badge tone="brand"><Sparkles className="size-3.5" /> Grounded</Badge>
         </div>
-        <span className="text-xs text-fg-subtle capitalize">{user?.tier ?? "free"} plan</span>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => setHistoryOpen(true)}>
+            <History className="size-4" /> History
+          </Button>
+          <Button variant="ghost" size="sm" onClick={newChat}>
+            <Plus className="size-4" /> New
+          </Button>
+        </div>
       </div>
+
+      <ChatHistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} onSelect={openChat} />
 
       {/* thread */}
       <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto pb-4 pr-1">
@@ -91,6 +125,47 @@ export default function AdvisorPage() {
 
       {/* composer */}
       <Composer value={input} onChange={setInput} onSend={() => submit(input)} disabled={send.isPending} />
+    </div>
+  );
+}
+
+function ChatHistoryDialog({
+  open,
+  onOpenChange,
+  onSelect,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title="Conversations" description="Your recent advisor chats.">
+        {open && <HistoryList onSelect={onSelect} />}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function HistoryList({ onSelect }: { onSelect: (id: string) => void }) {
+  const { data, isLoading } = useChatList();
+  if (isLoading) return <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-12" />)}</div>;
+  if (!data || data.length === 0)
+    return <p className="py-8 text-center text-sm text-fg-subtle">No past conversations yet.</p>;
+  return (
+    <div className="max-h-[60vh] space-y-1.5 overflow-y-auto">
+      {data.map((c) => (
+        <button
+          key={c.chat_id}
+          onClick={() => onSelect(c.chat_id)}
+          className="block w-full rounded-[12px] px-3 py-2.5 text-left transition-colors hover:bg-white/5"
+        >
+          <p className="truncate text-sm text-fg">{c.preview ?? "Conversation"}</p>
+          <p className="text-xs text-fg-subtle">
+            {new Date(c.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </p>
+        </button>
+      ))}
     </div>
   );
 }

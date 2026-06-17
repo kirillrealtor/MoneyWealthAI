@@ -36,6 +36,20 @@ class ResendVerificationRequest(BaseModel):
     captcha_token: str | None = None
 
 
+class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    captcha_token: str | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    token: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     user_id: str

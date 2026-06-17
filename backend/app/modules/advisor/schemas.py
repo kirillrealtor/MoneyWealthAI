@@ -30,6 +30,12 @@ class MessageOut(BaseModel):
     created_at: datetime
 
 
+class ChatSummary(BaseModel):
+    chat_id: str
+    started_at: datetime
+    preview: str | None
+
+
 class FeedbackRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

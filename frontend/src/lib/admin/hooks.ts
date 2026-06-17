@@ -97,6 +97,86 @@ export function useUpdateUser(id: string) {
   });
 }
 
+export type AiOps = {
+  stats: {
+    tier: number;
+    calls_total: number;
+    errors_total: number;
+    error_rate: number;
+    tokens_total: number;
+    validation_failures: number;
+    by_provider: Record<string, number>;
+  };
+  usage: { day: string; tokens: number; users: number }[];
+  top_users: { user_id: string; email: string; tokens: number }[];
+  tier_budgets: { free: number; plus: number; premium: number };
+};
+
+export type PlaidOps = {
+  health: {
+    total_items: number;
+    good_items: number;
+    error_items: number;
+    active_jobs: number;
+    failed_jobs_24h: number;
+  };
+  jobs: {
+    sync_id: string;
+    item_id: string;
+    status: string;
+    error_message: string | null;
+    transactions_synced: number;
+    started_at: string;
+  }[];
+};
+
+export function useAiOps() {
+  const get = useGet();
+  return useQuery({ queryKey: ["admin", "ai"], queryFn: () => get<AiOps>("/ai"), refetchInterval: 30_000 });
+}
+
+export function usePlaidOps() {
+  const get = useGet();
+  return useQuery({ queryKey: ["admin", "plaid"], queryFn: () => get<PlaidOps>("/plaid"), refetchInterval: 30_000 });
+}
+
+export function useResync() {
+  const { adminFetch } = useAdmin();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (itemId: string) => {
+      const res = await adminFetch(`/plaid/items/${itemId}/resync`, { method: "POST" });
+      if (!res.ok) throw new Error("resync failed");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "plaid"] }),
+  });
+}
+
+export type Flag = { key: string; enabled: boolean; description: string | null; updated_at: string };
+
+export function useFlags() {
+  const get = useGet();
+  return useQuery({ queryKey: ["admin", "flags"], queryFn: () => get<Flag[]>("/flags") });
+}
+
+export function useSetFlag() {
+  const { adminFetch } = useAdmin();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ key, enabled }: { key: string; enabled: boolean }) => {
+      const res = await adminFetch(`/flags/${key}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) throw new Error("flag update failed");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "flags"] }),
+  });
+}
+
 export function useAudit(limit = 50, offset = 0) {
   const get = useGet();
   return useQuery({

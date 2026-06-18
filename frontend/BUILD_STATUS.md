@@ -1,6 +1,6 @@
 # Frontend Build Status & Pending Work
 
-> **Working brand:** Fathom (provisional). **Stack:** Next.js 16, React 19, Tailwind 4, TypeScript.
+> **Working brand:** MoneyWealth AI (provisional). **Stack:** Next.js 16, React 19, Tailwind 4, TypeScript.
 > Roadmap reference: [FRONTEND_PLAN.md §26](FRONTEND_PLAN.md) · Admin/Billing: [ADMIN_CONSOLE_PLAN.md](ADMIN_CONSOLE_PLAN.md)
 > Legend: ✅ done · 🟡 partial · ⏳ built-but-needs-a-key · ⬜ not started
 

@@ -10,7 +10,7 @@ test.describe("admin console", () => {
 
     await page.waitForURL("**/admin", { timeout: 15_000 });
     await expect(page.getByText("Total users")).toBeVisible();
-    await expect(page.getByText("Fathom Admin")).toBeVisible();
+    await expect(page.getByText("MoneyWealth AI Admin")).toBeVisible();
   });
 
   test("admin can browse users", async ({ page }) => {

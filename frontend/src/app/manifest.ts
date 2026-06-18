@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Fathom — AI financial advisor",
-    short_name: "Fathom",
+    name: "MoneyWealth AI — AI financial advisor",
+    short_name: "MoneyWealth AI",
     description:
       "Grounded AI financial guidance over your real bank data — budgets, goals, debt and portfolio.",
     start_url: "/app",

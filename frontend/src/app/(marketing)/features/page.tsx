@@ -15,7 +15,7 @@ import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Features — Fathom",
+  title: "Features — MoneyWealth AI",
   description:
     "A grounded AI advisor, budgets, goals, debt payoff, portfolio and proactive alerts — one calm app for every money decision.",
 };
@@ -25,14 +25,14 @@ const FEATURES = [
     icon: Sparkles,
     name: "AI Advisor",
     tag: "Grounded, cited, honest",
-    body: "Ask anything about your money in plain language. Fathom reads your real transactions, budgets and accounts, answers with the exact figures, and shows you what it checked — and tells you honestly when it doesn't know.",
+    body: "Ask anything about your money in plain language. MoneyWealth AI reads your real transactions, budgets and accounts, answers with the exact figures, and shows you what it checked — and tells you honestly when it doesn't know.",
     points: ["Cites the data behind every answer", "Never invents balances or numbers", "Streams replies in real time"],
   },
   {
     icon: Wallet,
     name: "Budgets",
     tag: "Know before month-end",
-    body: "Set a monthly limit per category and watch your pace live. Fathom warns you as you approach a limit — not after you've blown past it.",
+    body: "Set a monthly limit per category and watch your pace live. MoneyWealth AI warns you as you approach a limit — not after you've blown past it.",
     points: ["Live pacing vs. limit", "Approaching-limit alerts", "Real Plaid categories"],
   },
   {

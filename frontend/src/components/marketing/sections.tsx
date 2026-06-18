@@ -47,7 +47,7 @@ export function StatsStrip() {
 export function HowItWorks() {
   const steps = [
     { icon: Link2, title: "Connect securely", body: "Link your banks through Plaid in seconds. Tokens are encrypted; access is read-only." },
-    { icon: Brain, title: "Fathom understands", body: "The advisor reads your real transactions, budgets, debt and holdings — grounded, never guessed." },
+    { icon: Brain, title: "MoneyWealth AI understands", body: "The advisor reads your real transactions, budgets, debt and holdings — grounded, never guessed." },
     { icon: Compass, title: "Act with clarity", body: "Get one clear next step at a time — what to pay, save, or move, and exactly why." },
   ];
   return (

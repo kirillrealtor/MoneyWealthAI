@@ -40,7 +40,7 @@ export default function Landing() {
         </h1>
 
         <p className="mt-6 max-w-xl text-balance text-lg text-fg-muted animate-[rise_0.6s_ease-out_0.1s_both]">
-          Fathom connects your real accounts and turns them into clear, grounded
+          MoneyWealth AI connects your real accounts and turns them into clear, grounded
           guidance — budgets, goals, debt and portfolio — with an AI advisor that
           shows its work.
         </p>

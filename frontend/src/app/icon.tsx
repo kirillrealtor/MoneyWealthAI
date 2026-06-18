@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
-// App icon / favicon — the Fathom mark on the ink field, generated at build.
+// App icon / favicon — the MoneyWealth AI mark on the ink field, generated at build.
 export default function Icon() {
   return new ImageResponse(
     (
@@ -21,7 +21,7 @@ export default function Icon() {
           fontWeight: 700,
         }}
       >
-        F
+        M
       </div>
     ),
     { ...size },

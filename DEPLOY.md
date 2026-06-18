@@ -1,4 +1,4 @@
-# Deploying Fathom (Vercel + AWS)
+# Deploying MoneyWealth AI (Vercel + AWS)
 
 A pragmatic, decision-made path to get the app live. ~60–90 min the first time.
 Architecture (matches the "Vercel + AWS Databases" stack):

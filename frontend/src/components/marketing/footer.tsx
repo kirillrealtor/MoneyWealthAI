@@ -35,7 +35,7 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-2">
             <Mark className="size-7" />
-            <span className="font-display text-xl text-fg">Fathom</span>
+            <span className="font-display text-xl text-fg">MoneyWealth AI</span>
           </div>
           <p className="mt-3 max-w-xs text-sm text-fg-subtle">
             Your AI financial advisor — grounded in your real data, never inventing numbers.
@@ -60,7 +60,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs text-fg-subtle sm:flex-row">
-          <p>© {new Date().getFullYear()} Fathom. Educational information, not financial advice.</p>
+          <p>© {new Date().getFullYear()} MoneyWealth AI. Educational information, not financial advice.</p>
           <p>Bank connections secured by Plaid · 256-bit encryption</p>
         </div>
       </div>

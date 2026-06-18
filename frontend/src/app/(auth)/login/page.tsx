@@ -57,7 +57,7 @@ function LoginForm() {
   return (
     <Panel className="p-7 sm:p-8">
       <h1 className="text-2xl font-medium tracking-tight">Welcome back</h1>
-      <p className="mt-1.5 text-sm text-fg-muted">Log in to your Fathom account.</p>
+      <p className="mt-1.5 text-sm text-fg-muted">Log in to your MoneyWealth AI account.</p>
 
       <form onSubmit={onSubmit} className="mt-7 space-y-4" noValidate>
         {error && (
@@ -104,7 +104,7 @@ function LoginForm() {
       </form>
 
       <p className="mt-6 text-center text-sm text-fg-muted">
-        New to Fathom?{" "}
+        New to MoneyWealth AI?{" "}
         <Link href="/signup" className="font-medium text-brand hover:underline">
           Create an account
         </Link>

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Fathom — Your AI financial advisor";
+export const alt = "MoneyWealth AI — Your AI financial advisor";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -37,9 +37,9 @@ export default function OgImage() {
               fontSize: 30,
             }}
           >
-            F
+            M
           </div>
-          <div style={{ fontSize: 34, fontWeight: 600 }}>Fathom</div>
+          <div style={{ fontSize: 34, fontWeight: 600 }}>MoneyWealth AI</div>
         </div>
         <div style={{ fontSize: 72, fontWeight: 600, lineHeight: 1.05, maxWidth: 900 }}>
           Finally understand your money.

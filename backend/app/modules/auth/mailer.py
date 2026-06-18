@@ -104,7 +104,7 @@ def build_reset_email(to: str, token: str) -> Mail:
         to=to,
         subject="Reset your password",
         text=(
-            "We received a request to reset your Fathom password. Click below to choose a new one:"
+            "We received a request to reset your MoneyWealth AI password. Click below to choose a new one:"
             f"\n\n{url}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email."
         ),
     )

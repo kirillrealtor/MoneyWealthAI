@@ -10,7 +10,7 @@ export function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-line px-4 py-5 lg:flex">
-      <Link href="/app" className="px-2" aria-label="Fathom home">
+      <Link href="/app" className="px-2" aria-label="MoneyWealth AI home">
         <Logo />
       </Link>
 

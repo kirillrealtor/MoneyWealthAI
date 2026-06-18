@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
  */
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
-const CONSENT = "fathom_analytics_consent";
+const CONSENT = "mw_analytics_consent";
 
 const listeners = new Set<() => void>();
 function subscribe(cb: () => void) {
@@ -57,7 +57,7 @@ function ConsentBanner() {
     <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-xl">
       <div className="glass flex flex-col items-center gap-3 rounded-[16px] p-4 text-sm sm:flex-row">
         <p className="flex-1 text-fg-muted">
-          We use privacy-friendly analytics to improve Fathom. No financial data is ever sent.
+          We use privacy-friendly analytics to improve MoneyWealth AI. No financial data is ever sent.
         </p>
         <div className="flex shrink-0 gap-2">
           <Button variant="ghost" size="sm" onClick={() => setConsent("declined")}>

@@ -38,7 +38,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-5">
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-5 text-iris" />
-            <span className="text-sm font-semibold tracking-tight">Fathom Admin</span>
+            <span className="text-sm font-semibold tracking-tight">MoneyWealth AI Admin</span>
           </div>
           <nav className="flex items-center gap-1">
             {NAV.map(({ href, label, icon: Icon }) => {

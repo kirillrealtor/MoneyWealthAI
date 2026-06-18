@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="relative flex min-h-dvh flex-col">
       <header className="flex items-center justify-between px-5 py-5 sm:px-8">
-        <Link href="/" aria-label="Fathom home">
+        <Link href="/" aria-label="MoneyWealth AI home">
           <Logo />
         </Link>
         <Link

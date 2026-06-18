@@ -4,9 +4,9 @@ import { PageHero } from "@/components/marketing/page-hero";
 import { Panel } from "@/components/ui/panel";
 
 export const metadata: Metadata = {
-  title: "Security — Fathom",
+  title: "Security — MoneyWealth AI",
   description:
-    "How Fathom protects your financial data: AES-256-GCM encryption, read-only bank access via Plaid, per-account isolation, and a strict web security posture.",
+    "How MoneyWealth AI protects your financial data: AES-256-GCM encryption, read-only bank access via Plaid, per-account isolation, and a strict web security posture.",
 };
 
 const PILLARS = [
@@ -18,7 +18,7 @@ const PILLARS = [
   {
     icon: Landmark,
     title: "Read-only banking",
-    body: "We connect through Plaid with read-only access. Fathom can see your transactions and balances — it can never move, send or withdraw your money.",
+    body: "We connect through Plaid with read-only access. MoneyWealth AI can see your transactions and balances — it can never move, send or withdraw your money.",
   },
   {
     icon: ShieldCheck,
@@ -82,7 +82,7 @@ export default function SecurityPage() {
             <h3 className="text-base font-medium">Responsible disclosure</h3>
             <p className="mt-1 text-sm text-fg-muted">
               Found something? We welcome reports from security researchers. Email{" "}
-              <span className="text-fg">security@fathom.app</span> and we&apos;ll respond promptly.
+              <span className="text-fg">security@moneywealth.ai</span> and we&apos;ll respond promptly.
             </p>
           </div>
         </Panel>

@@ -6,7 +6,7 @@ import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "About — Fathom",
+  title: "About — MoneyWealth AI",
   description: "Why we're building a calm, trustworthy AI financial advisor grounded in your real data.",
 };
 
@@ -31,7 +31,7 @@ export default function AboutPage() {
         <Panel className="p-8">
           <p className="text-fg-muted">
             Most money apps either drown you in dashboards or hand you generic tips that ignore your
-            actual situation. Fathom takes a different path: connect your real accounts, and an AI
+            actual situation. MoneyWealth AI takes a different path: connect your real accounts, and an AI
             advisor that <span className="text-fg">shows its work</span> turns that data into clear,
             grounded guidance — budgets, goals, debt payoff and portfolio health, all in one calm
             place.

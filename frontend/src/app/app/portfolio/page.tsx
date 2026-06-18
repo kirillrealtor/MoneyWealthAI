@@ -31,7 +31,7 @@ export default function PortfolioPage() {
           </span>
           <h3 className="mt-4 text-lg font-medium">No holdings linked</h3>
           <p className="mt-1 max-w-sm text-sm text-fg-muted">
-            Connect a brokerage or investment account and Fathom will show your allocation, drift
+            Connect a brokerage or investment account and MoneyWealth AI will show your allocation, drift
             and concentration at a glance.
           </p>
           <Button className="mt-5">

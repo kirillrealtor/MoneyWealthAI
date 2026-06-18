@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/marketing/legal-shell";
 
-export const metadata: Metadata = { title: "Disclosures — Fathom" };
+export const metadata: Metadata = { title: "Disclosures — MoneyWealth AI" };
 
 export default function DisclosuresPage() {
   return (
     <LegalShell title="Disclosures" updated="June 2026">
       <h2>Not financial advice</h2>
       <p>
-        Fathom provides educational information and tools based on your data. It is not a financial
+        MoneyWealth AI provides educational information and tools based on your data. It is not a financial
         advisor, broker-dealer, or tax or legal professional, and nothing here is personalized
         financial, investment, tax or legal advice.
       </p>
@@ -20,7 +20,7 @@ export default function DisclosuresPage() {
       </p>
       <h2>Portfolio information</h2>
       <p>
-        Portfolio features are informational only. Fathom does not recommend buying or selling any
+        Portfolio features are informational only. MoneyWealth AI does not recommend buying or selling any
         security and does not execute trades.
       </p>
       <h2>Bank data</h2>

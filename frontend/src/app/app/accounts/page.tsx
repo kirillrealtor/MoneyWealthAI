@@ -112,7 +112,7 @@ function ItemCard({ item }: { item: PlaidItem }) {
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent
           title="Disconnect this bank?"
-          description="This revokes Fathom's access at Plaid and permanently removes this bank's accounts and transactions. This can't be undone."
+          description="This revokes MoneyWealth AI's access at Plaid and permanently removes this bank's accounts and transactions. This can't be undone."
         >
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirm(false)}>Keep connected</Button>

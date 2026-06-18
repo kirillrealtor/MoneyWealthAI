@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     # Security: comma-separated allowlist for Host header (anti host-injection);
     # "*" only acceptable in dev. Max request body size in bytes.
     allowed_hosts: str = "*"
+    # Explicit opt-in to accept any Host header in production. Only set when the
+    # service has no stable hostname (e.g. a load-balancer-less container with a
+    # dynamic public IP) AND Host-derived URLs aren't trusted — the app builds
+    # links from WEB_APP_URL, not the Host header, so injection risk is contained.
+    trust_any_host: bool = False
     max_body_bytes: int = 1_000_000
     # Comma-separated CORS origins (credentialed). Empty = no cross-origin.
     cors_origins: str = ""
@@ -82,9 +87,10 @@ class Settings(BaseSettings):
         # fail at startup rather than ship a permissive instance. CORS is left
         # unchecked on purpose: the first-party Next BFF is same-origin, so an
         # empty CORS_ORIGINS is the correct production default.
-        if self.env == "production" and "*" in self.allowed_hosts_list:
+        if self.env == "production" and "*" in self.allowed_hosts_list and not self.trust_any_host:
             raise ValueError(
-                "ALLOWED_HOSTS must be an explicit comma-separated allowlist in production (not '*')"
+                "ALLOWED_HOSTS must be an explicit comma-separated allowlist in production "
+                "(not '*'), unless TRUST_ANY_HOST=true is set deliberately"
             )
         return self
 

@@ -10,7 +10,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth/context";
 import { useSendMessage, useFeedback, useChatList, useChatLoader } from "@/lib/api/advisor";
 import { ApiRequestError } from "@/lib/api/client";
-import { usePrefersReducedMotion } from "@/lib/hooks/use-reduced-motion";
+import { ChatMarkdown } from "@/components/advisor/chat-markdown";
+import { humanizeTools } from "@/lib/advisor-labels";
 
 type Msg =
   | { id: string; role: "user"; content: string }
@@ -114,7 +115,13 @@ export default function AdvisorPage() {
       <ChatHistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} onSelect={openChat} />
 
       {/* thread */}
-      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto pb-4 pr-1">
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Advisor conversation"
+        className="flex-1 space-y-5 overflow-y-auto pb-4 pr-1"
+      >
         {empty ? (
           <Welcome onPick={submit} name={user?.full_name?.split(" ")[0]} />
         ) : (
@@ -230,13 +237,18 @@ function AssistantBubble({ msg }: { msg: Extract<Msg, { role: "assistant" }> }) 
         <Mark className="size-4" />
       </span>
       <div className="min-w-0 max-w-[85%]">
-        <div className="rounded-2xl rounded-tl-md bg-surface-2/70 px-4 py-3 text-sm leading-relaxed text-fg ring-1 ring-line">
-          <TypeOut text={msg.content} animate={msg.fresh} />
+        <div
+          className={`rounded-2xl rounded-tl-md bg-surface-2/70 px-4 py-3 text-sm leading-relaxed text-fg ring-1 ring-line ${
+            msg.fresh ? "animate-rise" : ""
+          }`}
+        >
+          <ChatMarkdown>{msg.content}</ChatMarkdown>
         </div>
         {msg.tools.length > 0 && (
           <div className="mt-2 flex items-center gap-2 text-xs text-fg-subtle">
-            <span className="rounded-md bg-white/5 px-2 py-1 ring-1 ring-line">
-              ↳ checked <span className="text-fg-muted">{msg.tools.join(" · ")}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1 ring-1 ring-line">
+              <Sparkles className="size-3 text-brand/70" />
+              checked <span className="text-fg-muted">{humanizeTools(msg.tools)}</span>
             </span>
           </div>
         )}
@@ -264,32 +276,6 @@ function Feedback({ messageId }: { messageId: string }) {
         <ThumbsDown className="size-3.5" />
       </button>
     </div>
-  );
-}
-
-function TypeOut({ text, animate }: { text: string; animate: boolean }) {
-  const reduced = usePrefersReducedMotion();
-  const shouldType = animate && !reduced;
-  const [n, setN] = useState(() => (animate && !reduced ? 0 : text.length));
-
-  useEffect(() => {
-    if (!shouldType) return;
-    let i = 0;
-    const id = setInterval(() => {
-      i += 2;
-      setN(Math.min(i, text.length));
-      if (i >= text.length) clearInterval(id);
-    }, 12);
-    return () => clearInterval(id);
-  }, [shouldType, text.length]);
-
-  return (
-    <>
-      {text.slice(0, n)}
-      {shouldType && n < text.length && (
-        <span className="ml-0.5 inline-block h-4 w-[2px] -translate-y-[1px] animate-pulse bg-brand align-middle" />
-      )}
-    </>
   );
 }
 
@@ -322,10 +308,21 @@ function Composer({
   onSend: () => void;
   disabled: boolean;
 }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the textarea up to its max height as the user types.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [value]);
+
   return (
     <div className="glass rounded-[18px] p-2">
       <div className="flex items-end gap-2">
         <textarea
+          ref={ref}
           value={value}
           onChange={(e) => onChange(e.target.value.slice(0, 2000))}
           onKeyDown={(e) => {
@@ -335,6 +332,7 @@ function Composer({
             }
           }}
           rows={1}
+          aria-label="Message the advisor"
           placeholder="Ask about your budgets, goals, debt…"
           className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-fg outline-none placeholder:text-fg-subtle"
         />

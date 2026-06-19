@@ -9,6 +9,7 @@ import { MoneyInput } from "@/components/ui/money-input";
 import type { Goal } from "@/lib/api/types";
 import { useCreateGoal, useUpdateGoal } from "@/lib/api/goals";
 import { ApiRequestError } from "@/lib/api/client";
+import { amountSchema, validate } from "@/lib/validation";
 
 function tomorrowISO() {
   const d = new Date();
@@ -47,14 +48,20 @@ function GoalForm({ editing, onDone }: { editing?: Goal | null; onDone: () => vo
   const [current, setCurrent] = useState(editing ? String(Number(editing.current_amount)) : "");
   const [date, setDate] = useState(editing?.target_date ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [targetError, setTargetError] = useState<string | null>(null);
 
   const pending = create.isPending || update.isPending;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setTargetError(null);
     if (!title.trim()) return setError("Give your goal a name.");
-    if (!target || Number(target) <= 0) return setError("Enter a target greater than $0.");
+    const amt = validate(amountSchema, target);
+    if (!amt.ok) {
+      setTargetError(Object.values(amt.errors)[0] ?? "Enter a valid target amount.");
+      return;
+    }
     if (!date) return setError("Pick a target date.");
     if (date <= new Date().toISOString().slice(0, 10)) return setError("Target date must be in the future.");
 
@@ -87,7 +94,16 @@ function GoalForm({ editing, onDone }: { editing?: Goal | null; onDone: () => vo
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Target amount" htmlFor="target">
-          <MoneyInput id="target" value={target} onChange={setTarget} />
+          <MoneyInput
+            id="target"
+            value={target}
+            onChange={(v) => {
+              setTarget(v);
+              setTargetError(null);
+            }}
+            invalid={!!targetError}
+          />
+          {targetError && <p className="mt-1.5 text-xs text-negative">{targetError}</p>}
         </Field>
         <Field label="Saved so far" htmlFor="current">
           <MoneyInput id="current" value={current} onChange={setCurrent} placeholder="0.00" />

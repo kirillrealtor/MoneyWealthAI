@@ -10,6 +10,7 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { PLAID_CATEGORIES, categoryLabel, type Budget } from "@/lib/api/types";
 import { useCreateBudget, useUpdateBudget } from "@/lib/api/budgets";
 import { ApiRequestError } from "@/lib/api/client";
+import { amountSchema, validate } from "@/lib/validation";
 
 export function BudgetDialog({
   open,
@@ -43,14 +44,17 @@ function BudgetForm({ editing, onDone }: { editing?: Budget | null; onDone: () =
   const [limit, setLimit] = useState(editing ? String(Number(editing.monthly_limit)) : "");
   const [alertPct, setAlertPct] = useState(editing?.alert_at_pct ?? 80);
   const [error, setError] = useState<string | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   const pending = create.isPending || update.isPending;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!limit || Number(limit) <= 0) {
-      setError("Enter a monthly limit greater than $0.");
+    setLimitError(null);
+    const amt = validate(amountSchema, limit);
+    if (!amt.ok) {
+      setLimitError(Object.values(amt.errors)[0] ?? "Enter a valid monthly limit.");
       return;
     }
     try {
@@ -92,7 +96,16 @@ function BudgetForm({ editing, onDone }: { editing?: Budget | null; onDone: () =
       </Field>
 
       <Field label="Monthly limit" htmlFor="limit">
-        <MoneyInput id="limit" value={limit} onChange={setLimit} />
+        <MoneyInput
+          id="limit"
+          value={limit}
+          onChange={(v) => {
+            setLimit(v);
+            setLimitError(null);
+          }}
+          invalid={!!limitError}
+        />
+        {limitError && <p className="mt-1.5 text-xs text-negative">{limitError}</p>}
       </Field>
 
       <Field label="Alert me at" htmlFor="alert" hint={`${alertPct}% of the limit`}>

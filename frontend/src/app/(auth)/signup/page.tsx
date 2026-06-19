@@ -6,6 +6,7 @@ import { MailCheck } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput, Field } from "@/components/ui/input";
+import { signupSchema, validate } from "@/lib/validation";
 import type { ApiError } from "@/lib/auth/types";
 
 function strength(pw: string): { score: number; label: string } {
@@ -35,8 +36,9 @@ export default function SignupPage() {
     setError(null);
     setFieldErrors({});
     setExists(false);
-    if (password.length < 8) {
-      setFieldErrors({ password: "Use at least 8 characters." });
+    const check = validate(signupSchema, { email, password });
+    if (!check.ok) {
+      setFieldErrors(check.errors);
       return;
     }
     setLoading(true);

@@ -8,6 +8,7 @@ import {
   Sparkles,
   Bell,
   Settings,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 
@@ -17,6 +18,7 @@ export type NavItem = { href: string; label: string; icon: LucideIcon; enabled: 
 export const NAV: NavItem[] = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard, enabled: true },
   { href: "/app/accounts", label: "Accounts", icon: Landmark, enabled: true },
+  { href: "/app/transactions", label: "Transactions", icon: Receipt, enabled: true },
   { href: "/app/budgets", label: "Budgets", icon: Wallet, enabled: true },
   { href: "/app/goals", label: "Goals", icon: Target, enabled: true },
   { href: "/app/debt", label: "Debt", icon: TrendingDown, enabled: true },

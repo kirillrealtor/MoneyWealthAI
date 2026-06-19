@@ -10,10 +10,12 @@ from app.errors import ApiError
 
 from . import service
 from .schemas import (
+    ForgotPasswordRequest,
     LoginRequest,
     MeResponse,
     MessageResponse,
     ResendVerificationRequest,
+    ResetPasswordRequest,
     SignupRequest,
     SignupResponse,
     TokenResponse,
@@ -74,6 +76,24 @@ async def resend_verification(body: ResendVerificationRequest, request: Request,
     )
     # Generic regardless of account state (anti-enumeration).
     return MessageResponse(message="If an unverified account exists for this email, a new link has been sent.")
+
+
+@router.post("/forgot-password", response_model=MessageResponse,
+             dependencies=[Depends(rate_limit("auth_forgot", 5))])
+async def forgot_password(body: ForgotPasswordRequest, request: Request,
+                          tenant_id: str = Depends(resolve_tenant)) -> MessageResponse:
+    await service.request_password_reset(
+        email=body.email, tenant_id=tenant_id, captcha_token=body.captcha_token, ctx=_ctx(request)
+    )
+    # Generic regardless of account state (anti-enumeration).
+    return MessageResponse(message="If an account exists for this email, a reset link has been sent.")
+
+
+@router.post("/reset-password", response_model=MessageResponse,
+             dependencies=[Depends(rate_limit("auth_reset_pw", 10))])
+async def reset_password(body: ResetPasswordRequest, request: Request) -> MessageResponse:
+    await service.reset_password(body.token, body.password, _ctx(request))
+    return MessageResponse(message="Password updated. You can now log in.")
 
 
 @router.post("/login", response_model=TokenResponse,

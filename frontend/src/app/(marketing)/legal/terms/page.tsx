@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/marketing/legal-shell";
 
-export const metadata: Metadata = { title: "Terms of Service — Fathom" };
+export const metadata: Metadata = { title: "Terms of Service — MoneyWealth AI" };
 
 export default function TermsPage() {
   return (
     <LegalShell title="Terms of Service" updated="June 2026">
       <p>
-        These Terms govern your use of Fathom. By creating an account, you agree to them. Fathom
+        These Terms govern your use of MoneyWealth AI. By creating an account, you agree to them. MoneyWealth AI
         provides educational financial information and tools; it does not provide financial,
         investment, tax or legal advice.
       </p>
@@ -19,11 +19,11 @@ export default function TermsPage() {
       <h2>Acceptable use</h2>
       <p>
         Don&apos;t misuse the service: no attempts to breach security, access other users&apos; data,
-        scrape at scale, or use Fathom for unlawful purposes.
+        scrape at scale, or use MoneyWealth AI for unlawful purposes.
       </p>
       <h2>Bank connections</h2>
       <p>
-        Bank data is accessed read-only through Plaid under their terms. You authorize Fathom to
+        Bank data is accessed read-only through Plaid under their terms. You authorize MoneyWealth AI to
         retrieve and display your account information to power the product.
       </p>
       <h2>No financial advice</h2>

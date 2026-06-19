@@ -1,0 +1,45 @@
+{
+  "family": "moneywealth-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::346133548342:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "346133548342.dkr.ecr.us-east-1.amazonaws.com/moneywealth-backend:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
+      "environment": [
+        { "name": "ENV", "value": "production" },
+        { "name": "PORT", "value": "8080" },
+        { "name": "PLAID_ENV", "value": "sandbox" },
+        { "name": "PLAID_PRODUCTS", "value": "transactions,liabilities,investments" },
+        { "name": "SYNC_WORKER_ENABLED", "value": "true" },
+        { "name": "ALLOWED_HOSTS", "value": "*" },
+        { "name": "TRUST_ANY_HOST", "value": "true" },
+        { "name": "WEB_APP_URL", "value": "https://moneywealth-omega.vercel.app" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/DATABASE_URL" },
+        { "name": "MIGRATION_DATABASE_URL", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/MIGRATION_DATABASE_URL" },
+        { "name": "REDIS_URL", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/REDIS_URL" },
+        { "name": "JWT_ACCESS_SECRET", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/JWT_ACCESS_SECRET" },
+        { "name": "JWT_REFRESH_SECRET", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/JWT_REFRESH_SECRET" },
+        { "name": "PLAID_ENC_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_ENC_KEY" },
+        { "name": "PLAID_CLIENT_ID", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_CLIENT_ID" },
+        { "name": "PLAID_SECRET", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_SECRET" },
+        { "name": "GROQ_API_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/GROQ_API_KEY" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/moneywealth-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

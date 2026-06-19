@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/marketing/legal-shell";
 
-export const metadata: Metadata = { title: "Privacy Policy — Fathom" };
+export const metadata: Metadata = { title: "Privacy Policy — MoneyWealth AI" };
 
 export default function PrivacyPage() {
   return (
     <LegalShell title="Privacy Policy" updated="June 2026">
       <p>
         This policy explains what we collect, why, and your choices. We collect only what&apos;s
-        needed to run Fathom and never sell your data.
+        needed to run MoneyWealth AI and never sell your data.
       </p>
       <h2>What we collect</h2>
       <p>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Questions? Email <span className="text-fg">privacy@fathom.app</span>.
+        Questions? Email <span className="text-fg">privacy@moneywealth.ai</span>.
       </p>
     </LegalShell>
   );

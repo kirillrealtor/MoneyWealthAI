@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminProvider } from "@/lib/admin/context";
 
 export const metadata: Metadata = {
-  title: "Admin · Fathom",
+  title: "Admin · MoneyWealth AI",
   robots: { index: false, follow: false }, // never index the console
 };
 

@@ -1,4 +1,4 @@
-# Frontend Security Posture — Fathom
+# Frontend Security Posture — MoneyWealth AI
 
 A fintech UI holds financial data. This documents the front-end security model so
 it survives refactors. It complements the backend hardening (RLS, AES-GCM tokens,

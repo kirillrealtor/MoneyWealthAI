@@ -1,7 +1,7 @@
 # Frontend Product & Design Specification — AI Financial Advisor
 
 > **Status:** Draft v1.1 (reviewed for 1M-user scale, resilience & friendliness) · **Owners:** Product Owners (you) + Frontend
-> **Working brand:** *TBD — shared later; referenced as **Fathom** throughout as a placeholder, a one-token rename (see §3)*
+> **Working brand:** *TBD — shared later; referenced as **MoneyWealth AI** throughout as a placeholder, a one-token rename (see §3)*
 > **Scope:** the complete web product — marketing site, authenticated user app, and the
 > product-owner admin console — designed against the live backend API (FastAPI, Phases 0–6).
 > **Companion docs:** `backend/README.md`, `backend/docs/*`, `backend/db/schema.sql`.
@@ -86,7 +86,7 @@ is editable in Settings.
 
 ## 3. Brand identity, logo & "real logos" policy
 
-**Working name: Fathom** — connotes depth + understanding ("I fathom my finances").
+**Working name: MoneyWealth AI** — connotes depth + understanding ("I fathom my finances").
 Alternates to consider: *Northstar, Ledgerly, Cair, Tideline*. **Locking the name is the one
 blocking decision** (§28); everything else is name-agnostic via a `brand` token.
 
@@ -249,7 +249,7 @@ Mobile-first. Breakpoints: `sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1536`.
   dead end; onboarding is skippable and resumable; "why we ask" tooltips on anything that touches
   bank data.
 - **Financial compliance copy (required):**
-  - Persistent, unobtrusive disclaimer: *"Fathom provides educational information, not financial
+  - Persistent, unobtrusive disclaimer: *"MoneyWealth AI provides educational information, not financial
     advice."* on advisor + planning surfaces.
   - The advisor's grounded/compliance framing from the backend validator is surfaced, not hidden.
   - **No buy/sell directives** in portfolio (the backend is data-only) — UI must not imply them.
@@ -723,7 +723,7 @@ real (cross-cutting).
 - ✅ **Analytics:** **PostHog, self-hosted, consent-gated, zero PII**; feeds the admin KPI dashboard.
 
 **Still needed from product owners:**
-1. **Brand name** (Fathom provisional) + go-ahead to produce the logo set.
+1. **Brand name** (MoneyWealth AI provisional) + go-ahead to produce the logo set.
 2. Admin identity model (separate `admins` table recommended), IP-allowlist, and session-replay
    choices — see ADMIN_CONSOLE_PLAN §14.
 

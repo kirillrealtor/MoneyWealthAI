@@ -11,12 +11,16 @@ from app.config import settings
 from app.logging_conf import logger
 
 _INJECTION = [
-    re.compile(r"ignore\s+(previous|above|all|your)\s+(instructions|rules)", re.I),
-    re.compile(
-        r"you\s+are\s+now\b[^.]{0,40}\b(unrestricted|uncensored|jailbroken|dan|no\s+longer\s+bound|a\s+new\s+ai)",
-        re.I,
-    ),
-    re.compile(r"disregard\s+(your|all)\s+(rules|guidelines|instructions)", re.I),
+    # "ignore/disregard/forget the above | previous | earlier ..."
+    re.compile(r"\b(ignore|disregard|forget|override)\b[^.]{0,25}\b(above|previous|prior|preceding|earlier)\b", re.I),
+    # "ignore/disregard your instructions | rules | guidelines | prompt"
+    re.compile(r"\b(ignore|disregard|forget|override)\b[^.]{0,25}\b(instructions?|rules?|guidelines?|prompt)\b", re.I),
+    # role-override jailbreaks
+    re.compile(r"you\s+are\s+now\b[^.]{0,40}\b(unrestricted|uncensored|jailbroken|dan|a\s+new\s+ai)", re.I),
+    re.compile(r"\bact\s+as\s+(an?\s+)?(unrestricted|uncensored|jailbroken|dan|evil|developer)", re.I),
+    re.compile(r"no\s+longer\s+bound\s+by", re.I),
+    re.compile(r"\bdeveloper\s+mode\b", re.I),
+    # system-prompt extraction
     re.compile(r"system\s*prompt", re.I),
     re.compile(r"\[INST\]|\[/INST\]|<\|im_start\|>", re.I),
 ]

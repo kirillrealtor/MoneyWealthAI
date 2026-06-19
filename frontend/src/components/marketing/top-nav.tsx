@@ -13,7 +13,7 @@ export function TopNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
       <nav className="glass flex w-full max-w-5xl items-center justify-between rounded-full py-2 pl-4 pr-2">
-        <Link href="/" aria-label="Fathom home">
+        <Link href="/" aria-label="MoneyWealth AI home">
           <Logo />
         </Link>
         <div className="hidden items-center gap-1 md:flex">

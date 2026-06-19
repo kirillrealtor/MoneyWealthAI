@@ -26,6 +26,7 @@ from app.modules.notifications.router import router as notifications_router
 from app.modules.plaid.router import router as plaid_router
 from app.modules.plaid.router import webhook_router as plaid_webhook_router
 from app.modules.portfolio.router import router as portfolio_router
+from app.modules.transactions.router import router as transactions_router
 from app.redis_client import close_redis
 
 
@@ -87,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(goals_router)
     app.include_router(debt_router)
     app.include_router(portfolio_router)
+    app.include_router(transactions_router)
     app.include_router(notifications_router)
     app.include_router(admin_router)
     app.include_router(billing_router)

@@ -4,7 +4,7 @@ import { PricingTable } from "@/components/marketing/pricing-table";
 import { Panel } from "@/components/ui/panel";
 
 export const metadata: Metadata = {
-  title: "Pricing — Fathom",
+  title: "Pricing — MoneyWealth AI",
   description: "Start free. Upgrade when it pays off. Simple monthly or annual plans, no card to begin.",
 };
 
@@ -12,7 +12,7 @@ const FAQ = [
   { q: "Is there really a free plan?", a: "Yes. The Free plan includes every dashboard, budgets and goals, and 100 advisor messages a month — no card required to start." },
   { q: "Can I cancel anytime?", a: "Anytime, from your settings. Paid plans are month-to-month (or annual if you choose), and you keep access until the end of the period." },
   { q: "How is my financial data protected?", a: "Bank connections are read-only via Plaid, access tokens are encrypted with AES-256-GCM, and your data is isolated per account at the database level. See our Security page." },
-  { q: "Does the advisor give financial advice?", a: "Fathom provides grounded, educational information based on your real data — not personalized financial, investment, tax or legal advice." },
+  { q: "Does the advisor give financial advice?", a: "MoneyWealth AI provides grounded, educational information based on your real data — not personalized financial, investment, tax or legal advice." },
   { q: "What happens to my data if I cancel?", a: "You can export or delete your data anytime. Deleting your account disconnects your banks and purges your data." },
 ];
 

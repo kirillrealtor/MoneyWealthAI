@@ -15,19 +15,19 @@ const display = Instrument_Serif({
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100";
-const TITLE = "Fathom — Your AI financial advisor";
+const TITLE = "MoneyWealth AI — Your AI financial advisor";
 const DESCRIPTION =
-  "Fathom turns your real bank data into clear, grounded guidance — budgets, goals, debt and portfolio, with an AI advisor that never invents numbers.";
+  "MoneyWealth AI turns your real bank data into clear, grounded guidance — budgets, goals, debt and portfolio, with an AI advisor that never invents numbers.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: { default: TITLE, template: "%s · Fathom" },
+  title: { default: TITLE, template: "%s · MoneyWealth AI" },
   description: DESCRIPTION,
-  applicationName: "Fathom",
+  applicationName: "MoneyWealth AI",
   manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
-    siteName: "Fathom",
+    siteName: "MoneyWealth AI",
     title: TITLE,
     description: DESCRIPTION,
     url: APP_URL,

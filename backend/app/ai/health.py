@@ -64,6 +64,29 @@ async def get_degradation_tier() -> int:
         return 0
 
 
+async def get_ai_stats() -> dict[str, object]:
+    """Raw AI counters for the admin AI-ops surface. Fail-open to zeros."""
+    try:
+        calls = await redis_client.hgetall(_CALLS)  # type: ignore[misc]
+        errors = await redis_client.hgetall(_ERRORS)  # type: ignore[misc]
+        tokens = int(await redis_client.get(_TOKENS) or 0)
+        valfail = int(await redis_client.get(_VALFAIL) or 0)
+        tier = await get_degradation_tier()
+    except Exception:  # noqa: BLE001
+        calls, errors, tokens, valfail, tier = {}, {}, 0, 0, 0
+    total_calls = sum(int(v) for v in calls.values())
+    total_errors = sum(int(v) for v in errors.values())
+    return {
+        "tier": tier,
+        "calls_total": total_calls,
+        "errors_total": total_errors,
+        "error_rate": round(total_errors / total_calls, 4) if total_calls else 0.0,
+        "tokens_total": tokens,
+        "validation_failures": valfail,
+        "by_provider": {p: int(calls.get(p, 0)) for p in calls},
+    }
+
+
 async def prometheus_text() -> str:
     """Prometheus exposition for /metrics."""
     try:

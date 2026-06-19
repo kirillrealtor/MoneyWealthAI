@@ -88,5 +88,32 @@ class AuditList(BaseModel):
     offset: int
 
 
+class OutboxRow(BaseModel):
+    outbox_id: str
+    channel: str
+    status: str
+    attempts: int
+    error: str | None
+    created_at: datetime
+    sent_at: datetime | None
+
+
+class OutboxList(BaseModel):
+    items: list[OutboxRow]
+
+
+class FlagOut(BaseModel):
+    key: str
+    enabled: bool
+    description: str | None
+    updated_at: datetime
+
+
+class FlagUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
+
+
 class MessageResponse(BaseModel):
     message: str

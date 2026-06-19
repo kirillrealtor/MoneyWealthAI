@@ -11,7 +11,6 @@ import { useAuth } from "@/lib/auth/context";
 import { useSendMessage, useFeedback, useChatList, useChatLoader } from "@/lib/api/advisor";
 import { ApiRequestError } from "@/lib/api/client";
 import { ChatMarkdown } from "@/components/advisor/chat-markdown";
-import { humanizeTools } from "@/lib/advisor-labels";
 
 type Msg =
   | { id: string; role: "user"; content: string }
@@ -188,7 +187,7 @@ function Welcome({ onPick, name }: { onPick: (s: string) => void; name?: string 
         <span className="font-display italic text-aurora">money.</span>
       </h2>
       <p className="mt-2 max-w-md text-sm text-fg-muted">
-        I answer from your real data and show what I checked. I won&apos;t invent numbers.
+        I answer from your real data — and I won&apos;t invent numbers.
       </p>
       <div className="mt-7 grid w-full gap-2.5 sm:grid-cols-2">
         {SUGGESTIONS.map((s) => (
@@ -244,14 +243,6 @@ function AssistantBubble({ msg }: { msg: Extract<Msg, { role: "assistant" }> }) 
         >
           <ChatMarkdown>{msg.content}</ChatMarkdown>
         </div>
-        {msg.tools.length > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-fg-subtle">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1 ring-1 ring-line">
-              <Sparkles className="size-3 text-brand/70" />
-              checked <span className="text-fg-muted">{humanizeTools(msg.tools)}</span>
-            </span>
-          </div>
-        )}
         <Feedback messageId={msg.messageId} />
       </div>
     </div>

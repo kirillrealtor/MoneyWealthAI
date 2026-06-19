@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+
+region      = "us-east-1"
+environment = "prod"
+name        = "moneywealth"
+
+# HA / scale
+az_count      = 2
+desired_count = 2
+min_capacity  = 2
+max_capacity  = 10
+
+# Database
+db_instance_class = "db.t4g.micro" # bump to db.t4g.small+ for real load
+db_multi_az       = true
+
+# TLS: create an ACM cert for your domain in us-east-1, then paste its ARN.
+# Leave empty to run HTTP-only (not for production).
+acm_certificate_arn = ""
+
+web_app_url = "https://moneywealth-omega.vercel.app"
+alert_email = "you@example.com"
+
+# container_image is set by CI per-deploy; leave default to bootstrap from
+# the ECR :latest tag.

@@ -40,6 +40,10 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
+    # Deploy only on a manual trigger so pushes to main just validate (and stay
+    # green) until AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY are set. To enable
+    # push-to-deploy later, change this to: github.ref == 'refs/heads/main'.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 

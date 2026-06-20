@@ -55,6 +55,7 @@
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-think: think 1.4s ease-in-out infinite;
   --animate-float: float 8s ease-in-out infinite;
+  --animate-breathe: breathe 9s ease-in-out infinite;
 }
 
 @keyframes aurora {
@@ -77,6 +78,15 @@
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.07); }
+}
+/* slow shimmer sweep for the metallic hero headline */
+@keyframes shine {
+  from { background-position: 200% center; }
+  to { background-position: -200% center; }
 }
 
 /* ----------------------------------------------------------------------------
@@ -148,6 +158,16 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Animated metallic headline — white→silver with a slow shimmer sweep */
+@utility text-metallic {
+  background: linear-gradient(110deg, #ffffff 28%, #d6ded9 42%, #ffffff 50%, #aab2ae 66%, #ffffff 82%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 7s linear infinite;
 }
 
 /* Shimmering skeleton */

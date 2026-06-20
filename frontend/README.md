@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoneyWealth AI — Frontend
 
-## Getting Started
+The web product: marketing site, the authenticated app, and the admin console.
+**Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4.** Deployed on
+Vercel; it talks to the FastAPI backend through a same-origin **BFF**.
 
-First, run the development server:
+> ⚠️ This is Next.js **16** — APIs differ from older versions (`proxy.ts` replaces
+> `middleware.ts`, `cookies()`/route `params` are async). See `AGENTS.md`.
+
+## Stack
+
+- **Framework:** Next.js 16 (App Router, React Server Components, Turbopack), React 19, TypeScript 5
+- **Styling:** Tailwind CSS 4 — CSS-first design tokens in `src/app/globals.css` (`@theme`), full **light + dark** themes ("Emerald Calm") that flip from one place via `.dark` on `<html>`
+- **Data:** TanStack Query (server state) · **zod** (validation)
+- **UI:** Radix (dialogs), lucide-react (icons), sonner (toasts), **motion** (animation), react-markdown + remark-gfm (advisor), react-plaid-link
+- **Analytics:** posthog-js (consent-gated)
+- **Testing:** Vitest + Testing Library (unit) · Playwright + axe-core (e2e + a11y)
+
+## Architecture — BFF (Backend-for-Frontend)
+
+The browser **only** talks to Next. Route handlers proxy to the backend server-side:
+
+- `src/app/api/auth/*` — login/logout/refresh/verify (sets the first-party httpOnly refresh cookie)
+- `src/app/api/backend/[...path]` — authenticated proxy to the FastAPI API
+- Access token lives **in memory**; the refresh token is an httpOnly, `SameSite=Lax`
+  cookie scoped to `/api/auth`. `API_BASE_URL` is **server-only** (never `NEXT_PUBLIC_`).
+- Strict **nonce-based CSP** (`src/proxy.ts`) + security headers (`next.config.ts`).
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+echo "API_BASE_URL=http://localhost:3000" > .env.local   # the backend origin
+echo "NEXT_PUBLIC_APP_URL=http://localhost:3100" >> .env.local
+npm run dev                                               # http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend must be running (see [../backend/README.md](../backend/README.md)).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Dev server (Turbopack) |
+| `npm run build` / `npm start` | Production build / serve |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest unit/component tests |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:e2e` | Playwright e2e + axe a11y |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/
+    (marketing)/        landing, pricing, security, about, legal — dark cinematic hero
+    (auth)/             login, signup, reset, verify
+    app/                authenticated product: dashboard, accounts, transactions,
+                        budgets, goals, debt, portfolio, advisor, notifications, settings
+    admin/              admin console (separate identity): users, AI ops, Plaid, flags, outbox, audit
+    api/                BFF route handlers (auth + backend proxy)
+    globals.css         design tokens (@theme) + light/dark themes + keyframes
+    layout.tsx          fonts, metadata, no-flash theme script, ambient backdrop
+  components/
+    ui/                 design-system primitives (button, panel, money, money-input, dialog, theme-toggle, …)
+    advisor/ billing/ marketing/ shell/ visual/   feature + chrome components
+  lib/
+    api/                typed hooks per domain (budgets, goals, plaid, advisor, …)
+    auth/  theme/  validation.ts  utils.ts
+  proxy.ts              CSP nonce middleware
+e2e/                    Playwright specs (app, admin, marketing, a11y)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design system & theming
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All color/spacing/radius are **tokens** in `globals.css`. Light is the default; `.dark`
+on `<html>` flips every token (set before first paint by an inline theme script → no
+flash). Money renders via `<Money>`/`<MoneyInput>` with tabular figures and semantic
++/- coloring (emerald / burnt-orange, colorblind-safe). Motion respects
+`prefers-reduced-motion`.
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Production runs on **Vercel**. Merges to `main` auto-deploy via
+`.github/workflows/deploy-frontend.yml` (token-based; needs the `VERCEL_TOKEN` repo
+secret). `API_BASE_URL` (server-only) points at the backend; `NEXT_PUBLIC_APP_URL` is the
+public site URL.

@@ -167,7 +167,7 @@ function HistoryList({ onSelect }: { onSelect: (id: string) => void }) {
         <button
           key={c.chat_id}
           onClick={() => onSelect(c.chat_id)}
-          className="block w-full rounded-[12px] px-3 py-2.5 text-left transition-colors hover:bg-black/5"
+          className="block w-full rounded-[12px] px-3 py-2.5 text-left transition-colors hover:bg-hover"
         >
           <p className="truncate text-sm text-fg">{c.preview ?? "Conversation"}</p>
           <p className="text-xs text-fg-subtle">

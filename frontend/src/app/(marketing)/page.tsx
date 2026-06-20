@@ -253,7 +253,7 @@ function BentoGrid() {
       <Panel interactive className="animate-[rise_0.6s_ease-out_0.15s_both]">
         <Target className="size-5 text-iris" />
         <p className="mt-3 text-sm font-medium">Emergency Fund</p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/5">
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-hover">
           <div className="h-full rounded-full bg-gradient-to-r from-brand to-sky" style={{ width: "52%" }} />
         </div>
         <p className="mt-2 text-xs text-fg-subtle">

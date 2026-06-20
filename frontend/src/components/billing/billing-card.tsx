@@ -63,7 +63,7 @@ export function BillingCard() {
               aria-checked={annual}
               aria-label="Toggle annual billing"
               onClick={() => setAnnual((a) => !a)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${annual ? "bg-brand" : "bg-black/10"}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${annual ? "bg-brand" : "bg-hover-strong"}`}
             >
               <span className={`inline-block size-5 rounded-full bg-white transition-transform ${annual ? "translate-x-[22px]" : "translate-x-0.5"}`} />
             </button>

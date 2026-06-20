@@ -71,7 +71,7 @@ export default function PortfolioPage() {
                       <span className="capitalize text-fg-muted">{cls.replace(/_/g, " ")}</span>
                       <span className="tabular-nums">{Math.round(pct)}%</span>
                     </div>
-                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-black/5">
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-hover">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
                     </div>
                   </div>

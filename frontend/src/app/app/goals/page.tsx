@@ -100,7 +100,7 @@ function GoalCard({
           </div>
         </div>
         <div className="flex opacity-0 transition-opacity group-hover:opacity-100">
-          <button onClick={() => onEdit(g)} aria-label="Edit goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-black/5 hover:text-fg">
+          <button onClick={() => onEdit(g)} aria-label="Edit goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-hover hover:text-fg">
             <Pencil className="size-4" />
           </button>
           <button onClick={() => onDelete(g)} aria-label="Delete goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-negative/10 hover:text-negative">

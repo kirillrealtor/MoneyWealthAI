@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const links = [
   { href: "/features", label: "Features" },
@@ -27,7 +28,8 @@ export function TopNav() {
             </Link>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle className="size-9" />
           <Link href="/login" className="hidden sm:block">
             <Button variant="ghost" size="sm">
               Log in

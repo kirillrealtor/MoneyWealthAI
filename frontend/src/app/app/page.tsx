@@ -110,7 +110,7 @@ export default function DashboardPage() {
             ) : goals && goals.length > 0 ? (
               <>
                 <p className="text-2xl font-medium tracking-tight tnum">{goalProgress}%</p>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/5">
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-hover">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-brand to-sky transition-[width] duration-500"
                     style={{ width: `${goalProgress}%` }}

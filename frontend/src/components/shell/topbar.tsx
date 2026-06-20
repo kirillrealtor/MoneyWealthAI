@@ -6,6 +6,7 @@ import { Bell, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth/context";
 import { useNotifications } from "@/lib/api/notifications";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Mark } from "@/components/brand/logo";
 import { MobileNav } from "./mobile-nav";
 
@@ -27,14 +28,15 @@ export function Topbar() {
       <div className="flex flex-1 items-center" />
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Link
           href="/app/notifications"
           aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-          className="relative grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-black/5 hover:text-fg"
+          className="relative grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-hover hover:text-fg"
         >
           <Bell className="size-5" />
           {unread > 0 && (
-            <span className="absolute right-1.5 top-1.5 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-brand px-1 text-[10px] font-semibold text-ink">
+            <span className="absolute right-1.5 top-1.5 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-brand px-1 text-[10px] font-semibold text-on-brand">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
@@ -43,7 +45,7 @@ export function Topbar() {
         <div className="relative">
           <button
             onClick={() => setMenu((m) => !m)}
-            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-black/5"
+            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-hover"
             aria-haspopup="menu"
             aria-expanded={menu}
           >
@@ -74,7 +76,7 @@ export function Topbar() {
                 <button
                   role="menuitem"
                   onClick={() => logout()}
-                  className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-black/5 hover:text-fg"
+                  className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-hover hover:text-fg"
                 >
                   <LogOut className="size-4" /> Log out
                 </button>

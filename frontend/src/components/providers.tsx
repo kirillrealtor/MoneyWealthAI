@@ -36,8 +36,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           classNames: {
             toast:
               "!glass !rounded-[14px] !text-fg !border-line !text-sm",
-            actionButton: "!bg-brand !text-ink !rounded-lg !font-medium",
-            cancelButton: "!bg-black/5 !text-fg-muted !rounded-lg",
+            actionButton: "!bg-brand !text-on-brand !rounded-lg !font-medium",
+            cancelButton: "!bg-hover !text-fg-muted !rounded-lg",
           },
         }}
       />

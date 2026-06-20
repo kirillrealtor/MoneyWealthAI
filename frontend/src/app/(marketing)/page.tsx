@@ -2,10 +2,8 @@ import Link from "next/link";
 import {
   ArrowRight,
   Sparkles,
-  ShieldCheck,
   TrendingUp,
   Target,
-  Landmark,
   PiggyBank,
 } from "lucide-react";
 import { AdvisorDemo } from "@/components/marketing/advisor-demo";
@@ -18,7 +16,7 @@ import {
 } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
-import { Badge, Dot } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
 
 export default function Landing() {
@@ -58,17 +56,6 @@ export default function Landing() {
           </a>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-fg-subtle animate-[rise_0.6s_ease-out_0.2s_both]">
-          <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="size-3.5 text-brand" /> 256-bit encryption
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Landmark className="size-3.5 text-brand" /> Bank connections via Plaid
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Dot tone="positive" /> Read-only. We never move your money.
-          </span>
-        </div>
       </section>
 
       {/* trust strip */}
@@ -235,7 +222,7 @@ function Ring({ pct }: { pct: number }) {
   const c = 2 * Math.PI * r;
   return (
     <svg viewBox="0 0 64 64" className="size-16 -rotate-90" aria-hidden>
-      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="6" />
+      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(11,27,20,0.08)" strokeWidth="6" />
       <circle
         cx="32"
         cy="32"

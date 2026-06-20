@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
 import { usePortfolio } from "@/lib/api/portfolio";
 
-const COLORS = ["#19e6a0", "#38bdf8", "#7c8bff", "#fbbf24", "#ff7a6b", "#34e3a5"];
+const COLORS = ["#0e9f6e", "#14b8a6", "#0e9aa5", "#f59e0b", "#f97316", "#34d399"];
 
 export default function PortfolioPage() {
   const { data, isLoading, isError } = usePortfolio();
@@ -71,7 +71,7 @@ export default function PortfolioPage() {
                       <span className="capitalize text-fg-muted">{cls.replace(/_/g, " ")}</span>
                       <span className="tabular-nums">{Math.round(pct)}%</span>
                     </div>
-                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/5">
+                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-black/5">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
                     </div>
                   </div>

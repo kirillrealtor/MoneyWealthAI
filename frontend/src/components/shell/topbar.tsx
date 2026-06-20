@@ -30,7 +30,7 @@ export function Topbar() {
         <Link
           href="/app/notifications"
           aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-          className="relative grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+          className="relative grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-black/5 hover:text-fg"
         >
           <Bell className="size-5" />
           {unread > 0 && (
@@ -43,7 +43,7 @@ export function Topbar() {
         <div className="relative">
           <button
             onClick={() => setMenu((m) => !m)}
-            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-white/5"
+            className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-black/5"
             aria-haspopup="menu"
             aria-expanded={menu}
           >
@@ -74,7 +74,7 @@ export function Topbar() {
                 <button
                   role="menuitem"
                   onClick={() => logout()}
-                  className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-white/5 hover:text-fg"
+                  className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-black/5 hover:text-fg"
                 >
                   <LogOut className="size-4" /> Log out
                 </button>

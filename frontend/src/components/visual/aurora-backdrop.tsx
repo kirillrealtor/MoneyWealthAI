@@ -11,16 +11,16 @@ export function AuroraBackdrop() {
     >
       {/* aurora blobs */}
       <div
-        className="absolute -top-[20%] left-[8%] h-[55vh] w-[55vh] rounded-full opacity-50 blur-[120px] animate-[aurora_22s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #19e6a0, transparent 60%)" }}
+        className="absolute -top-[20%] left-[8%] h-[55vh] w-[55vh] rounded-full opacity-20 blur-[140px] animate-[aurora_22s_ease-in-out_infinite]"
+        style={{ background: "radial-gradient(circle, #0e9f6e, transparent 60%)" }}
       />
       <div
-        className="absolute top-[12%] right-[2%] h-[48vh] w-[48vh] rounded-full opacity-40 blur-[120px] animate-[aurora_28s_ease-in-out_infinite_reverse]"
-        style={{ background: "radial-gradient(circle, #7c8bff, transparent 60%)" }}
+        className="absolute top-[12%] right-[2%] h-[48vh] w-[48vh] rounded-full opacity-25 blur-[130px] animate-[aurora_28s_ease-in-out_infinite_reverse]"
+        style={{ background: "radial-gradient(circle, #0e9aa5, transparent 60%)" }}
       />
       <div
-        className="absolute bottom-[-15%] left-[38%] h-[50vh] w-[50vh] rounded-full opacity-30 blur-[130px] animate-[aurora_32s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #38bdf8, transparent 60%)" }}
+        className="absolute bottom-[-15%] left-[38%] h-[50vh] w-[50vh] rounded-full opacity-20 blur-[140px] animate-[aurora_32s_ease-in-out_infinite]"
+        style={{ background: "radial-gradient(circle, #14b8a6, transparent 60%)" }}
       />
 
       {/* faint grid */}

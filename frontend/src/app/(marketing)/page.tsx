@@ -186,7 +186,7 @@ function BentoGrid() {
       <Panel interactive className="animate-[rise_0.6s_ease-out_0.15s_both]">
         <Target className="size-5 text-iris" />
         <p className="mt-3 text-sm font-medium">Emergency Fund</p>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/5">
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/5">
           <div className="h-full rounded-full bg-gradient-to-r from-brand to-sky" style={{ width: "52%" }} />
         </div>
         <p className="mt-2 text-xs text-fg-subtle">
@@ -210,14 +210,14 @@ function Sparkline() {
     <svg viewBox="0 0 320 64" className="mt-4 w-full" preserveAspectRatio="none" aria-hidden>
       <defs>
         <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#19e6a0" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#19e6a0" stopOpacity="0" />
+          <stop offset="0" stopColor="#0e9f6e" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#0e9f6e" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
         d="M0 50 L40 44 L80 48 L120 34 L160 38 L200 24 L240 28 L280 16 L320 12"
         fill="none"
-        stroke="#19e6a0"
+        stroke="#0e9f6e"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -241,7 +241,7 @@ function Ring({ pct }: { pct: number }) {
         cy="32"
         r={r}
         fill="none"
-        stroke="#19e6a0"
+        stroke="#0e9f6e"
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={c}

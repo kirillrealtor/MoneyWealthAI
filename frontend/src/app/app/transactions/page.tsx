@@ -42,7 +42,7 @@ export default function TransactionsPage() {
 
       {data && rows.length === 0 && (
         <Panel className="flex flex-col items-center py-14 text-center">
-          <span className="grid size-12 place-items-center rounded-2xl bg-white/5 ring-1 ring-line"><Receipt className="size-6 text-fg-muted" /></span>
+          <span className="grid size-12 place-items-center rounded-2xl bg-black/5 ring-1 ring-line"><Receipt className="size-6 text-fg-muted" /></span>
           <h3 className="mt-4 text-lg font-medium">No transactions</h3>
           <p className="mt-1 max-w-xs text-sm text-fg-muted">{search || category ? "Try a different filter." : "Connect a bank to see your transactions here."}</p>
         </Panel>

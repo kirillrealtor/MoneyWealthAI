@@ -8,7 +8,7 @@ const badge = cva(
     variants: {
       tone: {
         brand: "bg-brand/12 text-brand ring-1 ring-brand/25",
-        neutral: "bg-white/5 text-fg-muted ring-1 ring-line",
+        neutral: "bg-black/5 text-fg-muted ring-1 ring-line",
         positive: "bg-positive/12 text-positive ring-1 ring-positive/25",
         negative: "bg-negative/12 text-negative ring-1 ring-negative/25",
         warning: "bg-warning/12 text-warning ring-1 ring-warning/25",

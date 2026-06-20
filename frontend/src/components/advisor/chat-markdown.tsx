@@ -21,7 +21,7 @@ const components: Components = {
   h2: ({ children }) => <h3 className="mb-1.5 mt-3 text-sm font-semibold text-fg">{children}</h3>,
   h3: ({ children }) => <h3 className="mb-1.5 mt-3 text-sm font-semibold text-fg">{children}</h3>,
   code: ({ children }) => (
-    <code className="rounded bg-white/8 px-1 py-0.5 font-mono text-[0.85em] text-fg">{children}</code>
+    <code className="rounded bg-black/8 px-1 py-0.5 font-mono text-[0.85em] text-fg">{children}</code>
   ),
   a: ({ href, children }) => (
     <a

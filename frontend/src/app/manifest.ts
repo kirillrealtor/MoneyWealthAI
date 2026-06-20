@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Grounded AI financial guidance over your real bank data — budgets, goals, debt and portfolio.",
     start_url: "/app",
     display: "standalone",
-    background_color: "#06090f",
-    theme_color: "#06090f",
+    background_color: "#f6fbf8",
+    theme_color: "#f6fbf8",
     icons: [
       // Provisional — replace with branded maskable 192/512 PNGs when ready.
       { src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },

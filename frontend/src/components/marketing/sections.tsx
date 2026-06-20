@@ -83,7 +83,7 @@ export function FeatureGrid() {
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {features.map(({ icon: Icon, title, body, tone }) => (
           <Panel key={title} interactive className="group">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-white/5 ring-1 ring-line transition-colors group-hover:ring-brand/40">
+            <div className="flex size-11 items-center justify-center rounded-xl bg-black/5 ring-1 ring-line transition-colors group-hover:ring-brand/40">
               <Icon className={tone === "brand" ? "size-5 text-brand" : "size-5 text-fg-muted"} />
             </div>
             <h3 className="mt-4 text-base font-medium">{title}</h3>

@@ -28,13 +28,13 @@ export function Mark({ className }: { className?: string }) {
     <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden>
       <defs>
         <linearGradient id="mw-g" x1="4" y1="4" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#19e6a0" />
-          <stop offset="0.55" stopColor="#38bdf8" />
-          <stop offset="1" stopColor="#7c8bff" />
+          <stop stopColor="#0e9f6e" />
+          <stop offset="0.55" stopColor="#14b8a6" />
+          <stop offset="1" stopColor="#0e9aa5" />
         </linearGradient>
       </defs>
       {/* rounded square field */}
-      <rect x="1" y="1" width="30" height="30" rx="9" fill="#0c111c" stroke="url(#mw-g)" strokeOpacity="0.5" strokeWidth="1.2" />
+      <rect x="1" y="1" width="30" height="30" rx="9" fill="#0b1b14" stroke="url(#mw-g)" strokeOpacity="0.5" strokeWidth="1.2" />
       {/* concentric depth arcs */}
       <path d="M9 11.5c4.5-3 9.5-3 14 0" stroke="url(#mw-g)" strokeWidth="2" strokeLinecap="round" />
       <path d="M11 16.5c3-2 7-2 10 0" stroke="url(#mw-g)" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.8" />

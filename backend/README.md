@@ -1,12 +1,19 @@
-# AI Financial Advisor — Backend
+# MoneyWealth AI — Backend
 
-Python / FastAPI backend (async). Aurora-compatible Postgres (asyncpg) + Redis.
+Python / FastAPI backend (async). PostgreSQL (asyncpg, FORCE RLS) + Redis.
 Built per [docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md) on the
 build order in [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md).
 
 > **Stack note:** Backend is Python (FastAPI). Frontend is TypeScript (Next.js).
 > Python is the primary application language; if/when heavy quant or ML work
 > appears (evals, Monte Carlo modeling, embeddings), it stays in Python too.
+
+**Deployed:** runs on **AWS ECS Fargate** with **RDS PostgreSQL**, **Upstash Redis**, and
+secrets in **AWS SSM Parameter Store**. Image lives in ECR; the task-definition template
+is in [`deploy/task-definition.json`](deploy/task-definition.json) and the
+push→ECR→ECS pipeline in [`../.github/workflows/deploy-backend.yml`](../.github/workflows/deploy-backend.yml).
+The full reproducible target stack (VPC, ALB, autoscaling, Multi-AZ RDS) is Terraform in
+[`../infra/terraform/`](../infra/terraform/). Runbook: [`../DEPLOY.md`](../DEPLOY.md).
 
 ## Status
 - ✅ **Phase 0** — scaffold, config, asyncpg pool (RDS-Proxy-ready), SQL migrations, structlog, tracing, health
@@ -81,8 +88,12 @@ app/
   db.py                asyncpg pool, query helpers, with_tenant (RLS)
   redis_client.py  logging_conf.py  crypto.py  errors.py  audit.py
   deps.py              require_auth, resolve_tenant, rate_limit
+  ai/                  advisor loop, tools (MCP), prompts, safety, validator, budget
   modules/
     auth/              tokens, mailer, schemas, service, router
+    plaid/             link/exchange/sync, encrypted tokens, webhooks
+    budgets/  goals/  planning/   debt, portfolio, affordability engines (Decimal-exact)
+    advisor/  transactions/  notifications/  billing/  admin/
     health/
 db/
   migrations/          executable schema (source of truth)

@@ -1,40 +1,119 @@
-# AI Financial Advisor — Monorepo
+# MoneyWealth AI
 
-AI-native personal finance platform. Single repository, language-separated by app.
+**An AI-native personal finance platform** — connect your real bank accounts and get
+clear, *grounded* guidance: budgets, goals, debt payoff, portfolio health, and an AI
+advisor that cites the data it used and **never invents numbers**.
+
+- 🌐 **Live app:** https://moneywealth-omega.vercel.app
+- 🧠 Grounded AI advisor (Groq Llama 3.3 70B / Anthropic Claude) with a real safety stack
+- 🏦 Bank linking via Plaid · 🔒 read-only, encrypted · 📊 budgets, goals, debt, portfolio
+- 🎨 Light **and** dark themes ("Emerald Calm") · ♿ WCAG-minded · 📱 responsive PWA
+
+> Monorepo: a Python/FastAPI backend and a Next.js/TypeScript frontend that coordinate
+> through the backend's auto-generated **OpenAPI** contract.
+
+---
+
+## Architecture at a glance
+
+```
+Browser ──► Vercel (Next.js 16 frontend + BFF)  ──►  AWS ECS Fargate (FastAPI)
+   only talks to Vercel (same-origin)                 │            │
+   nonce CSP · httpOnly refresh cookie         AWS RDS Postgres   Upstash Redis
+                                               (FORCE RLS)        (rate limits,
+                                                                   AI token budgets)
+                                               + Plaid · Groq/Claude (egress)
+```
+
+- **BFF security model** — the browser only talks to Next; route handlers proxy to the
+  backend server-side. Access token in memory, refresh token in a first-party httpOnly
+  cookie, strict **nonce-based CSP**. `API_BASE_URL` is server-only.
+- **Tenant + per-user isolation** — Postgres **FORCE Row-Level Security**; the app
+  connects as a non-owner `app_user` (`NOBYPASSRLS`). Admin cross-tenant reads go through
+  narrow audited `SECURITY DEFINER` functions only.
+- **Grounded AI** — every quantitative answer must call a tenant-scoped tool for live
+  data; an output validator rejects ungrounded numbers, missing compliance framing, and
+  secret/SQL leaks; an input layer blocks prompt-injection/jailbreak/crisis.
+
+## Repository layout
 
 ```
 .
-├── backend/          Python · FastAPI · asyncpg · Redis  (API + AI orchestration)
-│   ├── app/            application code
-│   ├── db/migrations/  SQL schema (source of truth)
-│   ├── scripts/        migration runner
-│   ├── tests/          unit + integration
-│   └── docs/           architecture, build sequence, security, pending items
-├── frontend/         (coming) TypeScript · Next.js · React
-├── docker-compose.yml   orchestrates datastores + services for local dev
-└── .github/workflows/   CI (runs in ./backend)
+├── backend/              Python · FastAPI · asyncpg · Redis   (API + AI orchestration)
+│   ├── app/                application code (auth, plaid, ai, budgets, goals, admin, …)
+│   ├── db/migrations/      SQL schema — source of truth (FORCE RLS, SECURITY DEFINER fns)
+│   ├── tests/ + tests/evals/  unit + integration + AI safety eval harness
+│   ├── deploy/             ECS task-definition template
+│   └── docs/               architecture, security, DR, production deployment
+├── frontend/             TypeScript · Next.js 16 · React 19 · Tailwind 4
+│   └── src/                app (BFF) · components · design tokens · Vitest/Playwright
+├── infra/terraform/      Infrastructure as Code — the scalable AWS target stack
+├── .github/workflows/    CI (lint/type/test/AI-eval) + auto-deploy (backend ECS, frontend Vercel)
+├── DEPLOY.md             deployment runbook
+└── docker-compose.yml    local Postgres + Redis
 ```
 
-## Why a monorepo (not split repos)
-Backend (Python) and frontend (TypeScript) share no code — they coordinate via the
-backend's auto-generated **OpenAPI** contract. For a small team a monorepo gives
-atomic API+UI commits, one CI, and no cross-repo version coordination. A folder can
-still be split into its own repo later (`git subtree split`) if needed.
+## Tech stack
 
-## Quick start (backend)
+| Layer | Tech |
+|---|---|
+| **Frontend** | Next.js 16 (App Router, RSC, BFF), React 19, TypeScript 5, Tailwind 4 (token `@theme`), TanStack Query, Radix, zod, react-markdown, react-plaid-link, motion, posthog-js |
+| **Backend** | Python 3.12, FastAPI, asyncpg (raw parameterized SQL — no ORM), Pydantic v2, JWT |
+| **Data** | PostgreSQL (FORCE RLS), Redis (rate limits + AI token budgets), durable `sync_jobs` queue |
+| **AI** | Groq (Llama 3.3 70B) / Anthropic Claude — grounded agentic tool-calling + safety eval harness |
+| **Integrations** | Plaid (transactions/liabilities/investments), Stripe (billing, built) |
+| **Infra** | AWS ECS Fargate · RDS · ECR · SSM (secrets) · CloudWatch · Upstash Redis · Vercel · Docker · Terraform |
+| **Quality** | ruff, mypy, pytest (backend) · ESLint, Vitest + Testing Library, Playwright + axe (frontend) |
+
+## Quick start (local)
+
+**1) Datastores** (from repo root):
 ```bash
-docker compose up -d postgres redis        # datastores (Postgres :5433, Redis :6380)
-cd backend
-python -m venv .venv && .venv/Scripts/activate   # Windows; use bin/activate on *nix
-pip install -r requirements-dev.txt
-python -m scripts.migrate
-uvicorn app.main:app --reload --port 3000  # http://localhost:3000/docs
+docker compose up -d postgres redis        # Postgres :5433, Redis :6380
 ```
 
-Full backend docs: [backend/README.md](backend/README.md).
-Run everything in containers: `docker compose up --build`.
+**2) Backend** (`backend/`):
+```bash
+cp .env.example .env
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+python -m scripts.migrate                            # apply db/migrations/*.sql
+uvicorn app.main:app --reload --port 3000            # http://localhost:3000/docs
+```
+
+**3) Frontend** (`frontend/`):
+```bash
+npm install
+echo "API_BASE_URL=http://localhost:3000" > .env.local
+npm run dev                                          # http://localhost:3100
+```
+
+See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) for details.
+
+## Testing & CI
+
+```bash
+# backend
+cd backend && ruff check . && mypy app && pytest           # + python -m scripts.run_evals
+# frontend
+cd frontend && npm run lint && npm test && npm run build   # Vitest unit + build
+```
+
+CI (`.github/workflows/ci.yml`) runs lint, type-check, tests, an **AI-safety eval gate**,
+a dependency scan, and the frontend job on every push/PR. Merges to `main` **auto-deploy**
+the frontend to Vercel (and the backend to ECS once AWS secrets are set).
+
+## Deployment
+
+Live today on **AWS (ECS Fargate + RDS + SSM) + Upstash Redis + Vercel**. The repeatable,
+reviewable target architecture (dedicated VPC, ALB, autoscaling, Multi-AZ RDS) is captured
+as **Terraform** in [infra/terraform/](infra/terraform/). Step-by-step runbook: [DEPLOY.md](DEPLOY.md).
 
 ## Status
-- ✅ Backend Phase 0 + 1 (+ security hardening, captcha) — see [backend/docs/](backend/docs/)
-- ⏭️ Backend Phase 2 — Plaid sandbox
-- ⏭️ Frontend — not started
+
+- ✅ Backend Phases 0–6 — auth, Plaid, grounded AI advisor + safety, budgets/goals/debt/portfolio, proactive alerts, reliability/observability ([backend/docs/](backend/docs/))
+- ✅ Frontend — full product: marketing site, authenticated app (10 surfaces), admin console; light/dark theme; unit + e2e tests
+- ✅ Deployed to AWS + Vercel with CI/CD and IaC
+- ⏭️ Activation items: production Plaid, Stripe live keys, counsel-reviewed legal, stable HTTPS via load balancer
+
+> Educational information, not financial advice.

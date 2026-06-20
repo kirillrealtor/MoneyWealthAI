@@ -23,30 +23,21 @@ export function AuroraBackdrop() {
         style={{ background: "radial-gradient(circle, #14b8a6, transparent 60%)" }}
       />
 
-      {/* faint grid */}
+      {/* faint grid (subtle dark lines on the light canvas) */}
       <div
-        className="absolute inset-0 opacity-[0.18]"
+        className="absolute inset-0 opacity-50"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+            "linear-gradient(rgba(11,27,20,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(11,27,20,0.035) 1px, transparent 1px)",
           backgroundSize: "56px 56px",
           maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%)",
         }}
       />
 
-      {/* vignette to settle the canvas */}
+      {/* soft top wash to lift the canvas (light, never darkens) */}
       <div
         className="absolute inset-0"
-        style={{ background: "radial-gradient(ellipse 100% 80% at 50% -10%, transparent 50%, rgba(2,4,8,0.7))" }}
-      />
-
-      {/* grain */}
-      <div
-        className="absolute inset-0 opacity-[0.04] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-        }}
+        style={{ background: "radial-gradient(ellipse 90% 55% at 50% -10%, rgba(255,255,255,0.6), transparent 60%)" }}
       />
     </div>
   );

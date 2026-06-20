@@ -143,8 +143,8 @@ function GoalRing({ pct }: { pct: number }) {
       />
       <defs>
         <linearGradient id="goalgrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#0e9f6e" />
-          <stop offset="1" stopColor="#14b8a6" />
+          <stop offset="0" stopColor="#7c3aed" />
+          <stop offset="1" stopColor="#8b5cf6" />
         </linearGradient>
       </defs>
       <text x="30" y="31" transform="rotate(90 30 30)" textAnchor="middle" dominantBaseline="middle" className="fill-fg text-[12px] font-medium tnum">

@@ -66,11 +66,11 @@ export default function Landing() {
 /* ================================== Hero ================================== */
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden bg-[#06120c] text-white">
+    <section className="relative isolate overflow-hidden bg-[#0d0a18] text-white">
       <HeroBackdrop />
 
       <div className="relative mx-auto max-w-6xl px-5 pt-40 text-center">
-        <h1 className="mx-auto max-w-4xl text-balance text-6xl font-semibold leading-[0.95] tracking-[-0.025em] animate-[rise_0.7s_ease-out_0.05s_both] [text-shadow:0_2px_60px_rgba(14,159,110,0.28)] sm:text-[5.75rem]">
+        <h1 className="mx-auto max-w-4xl text-balance text-6xl font-semibold leading-[0.95] tracking-[-0.025em] animate-[rise_0.7s_ease-out_0.05s_both] [text-shadow:0_2px_60px_rgba(124,58,237,0.28)] sm:text-[5.75rem]">
           <span className="font-display text-[0.78em] font-normal italic text-white/45">Finally</span>{" "}
           <span className="text-metallic">understand</span>
           <br />
@@ -124,8 +124,8 @@ function ProductCards() {
             "animate-[rise_0.6s_ease-out_both]",
             "duration-300 will-change-transform",
             p.featured
-              ? "-translate-y-5 border-brand/50 bg-[#08231a] shadow-[0_0_70px_-12px_rgba(14,159,110,0.75)] hover:-translate-y-7 hover:shadow-[0_0_90px_-10px_rgba(14,159,110,0.9)]"
-              : "border-white/10 bg-white/[0.04] hover:-translate-y-2 hover:border-brand/30 hover:bg-white/[0.07] hover:shadow-[0_18px_50px_-20px_rgba(14,159,110,0.5)]",
+              ? "-translate-y-5 border-brand/50 bg-[#1a1033] shadow-[0_0_70px_-12px_rgba(124,58,237,0.75)] hover:-translate-y-7 hover:shadow-[0_0_90px_-10px_rgba(124,58,237,0.9)]"
+              : "border-white/10 bg-white/[0.04] hover:-translate-y-2 hover:border-brand/30 hover:bg-white/[0.07] hover:shadow-[0_18px_50px_-20px_rgba(124,58,237,0.5)]",
           )}
           style={{ width: p.featured ? 188 : 150, animationDelay: `${0.2 + i * 0.05}s` }}
         >
@@ -277,14 +277,14 @@ function Sparkline() {
     <svg viewBox="0 0 320 64" className="mt-4 w-full" preserveAspectRatio="none" aria-hidden>
       <defs>
         <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0e9f6e" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#0e9f6e" stopOpacity="0" />
+          <stop offset="0" stopColor="#7c3aed" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#7c3aed" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
         d="M0 50 L40 44 L80 48 L120 34 L160 38 L200 24 L240 28 L280 16 L320 12"
         fill="none"
-        stroke="#0e9f6e"
+        stroke="#7c3aed"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -308,7 +308,7 @@ function Ring({ pct }: { pct: number }) {
         cy="32"
         r={r}
         fill="none"
-        stroke="#0e9f6e"
+        stroke="#7c3aed"
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={c}

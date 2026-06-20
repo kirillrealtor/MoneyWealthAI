@@ -5,44 +5,44 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================================
-   MoneyWealth AI — Design system  ·  "Emerald Calm"
-   White-first, reassuring money app with a single signature color (emerald).
+   MoneyWealth AI — Design system  ·  "Violet Premium"
+   Porcelain off-white canvas, a confident violet signature, amber highlights.
    Full light + dark themes: every token below flips under `.dark`, so the
    whole product re-themes from one place. Tabular money, restrained motion.
    ========================================================================== */
 
 @theme {
-  /* ---- Brand & accent (the one major color) ------------------------------ */
-  --color-brand: #0e9f6e;          /* emerald — the signature */
-  --color-brand-soft: #e7f6ef;     /* tinted wash for soft fills */
-  --color-brand-strong: #0b8a5f;   /* pressed / deep emerald */
-  --color-iris: #0e9aa5;           /* teal counterpoint (gradients only) */
-  --color-sky: #14b8a6;            /* teal-green for the gradient mid */
+  /* ---- Brand & accent (violet signature, amber highlight) ---------------- */
+  --color-brand: #7c3aed;          /* violet — the signature */
+  --color-brand-soft: #f3eefe;     /* tinted wash for soft fills */
+  --color-brand-strong: #6d28d9;   /* pressed / deep violet */
+  --color-iris: #f59e0b;           /* amber highlight (accents + gradient end) */
+  --color-sky: #a855f7;            /* purple for the gradient mid */
 
   /* ---- Canvas & surfaces ------------------------------------------------- */
-  --color-ink: #f7faf9;            /* page canvas — near-white */
-  --color-ink-2: #eef4f1;
+  --color-ink: #fcfbfe;            /* page canvas — porcelain off-white */
+  --color-ink-2: #f4f0fb;
   --color-surface: #ffffff;        /* raised panel base */
-  --color-surface-2: #f1f6f3;
+  --color-surface-2: #f7f4fc;
   --color-elevated: #ffffff;
 
   /* ---- Text (WCAG AA on the canvas) -------------------------------------- */
-  --color-fg: #0a1713;
-  --color-fg-muted: #45554e;
-  --color-fg-subtle: #6a7a72;
+  --color-fg: #1a1426;
+  --color-fg-muted: #574d68;
+  --color-fg-subtle: #756c83;
   --color-on-brand: #ffffff;       /* stable readable text on brand fills */
 
   /* ---- Lines & interaction surfaces -------------------------------------- */
-  --color-line: rgba(6, 24, 16, 0.10);
-  --color-line-strong: rgba(6, 24, 16, 0.16);
-  --color-hover: rgba(6, 24, 16, 0.05);       /* subtle hover wash */
-  --color-hover-strong: rgba(6, 24, 16, 0.10); /* tracks, chips, dividers */
+  --color-line: rgba(26, 20, 38, 0.10);
+  --color-line-strong: rgba(26, 20, 38, 0.16);
+  --color-hover: rgba(26, 20, 38, 0.05);       /* subtle hover wash */
+  --color-hover-strong: rgba(26, 20, 38, 0.10); /* tracks, chips, dividers */
 
   /* ---- Finance data colors (semantic; pair with +/- glyphs) -------------- */
-  --color-positive: #0e9f6e;       /* emerald */
-  --color-negative: #c2410c;       /* burnt orange — colorblind-safe vs green */
+  --color-positive: #16a34a;       /* green */
+  --color-negative: #dc2626;       /* red */
   --color-warning: #b45309;        /* amber-700, readable on light */
-  --color-neutral: #64786e;
+  --color-neutral: #6b6478;
 
   /* ---- Radii ------------------------------------------------------------- */
   --radius-sm: 8px;
@@ -80,18 +80,18 @@
   --glass-base: color-mix(in oklab, var(--color-surface) 90%, transparent);
   --glass-border: var(--color-line);
   --glass-inset: 0 1px 0 0 rgba(255, 255, 255, 0.6);
-  --glass-shadow: 0 12px 30px -18px rgba(6, 24, 16, 0.18);
+  --glass-shadow: 0 12px 30px -18px rgba(26, 20, 38, 0.16);
 
   /* skeleton shimmer */
   --skeleton-base: var(--color-surface-2);
-  --skeleton-shine: #e6f1ea;
+  --skeleton-shine: #ede7f7;
 
   /* scrollbar */
   --scrollbar-thumb: var(--color-line-strong);
   --scrollbar-thumb-hover: color-mix(in oklab, var(--color-fg) 28%, transparent);
 
   /* ambient backdrop */
-  --aurora-grid: rgba(6, 24, 16, 0.035);
+  --aurora-grid: rgba(26, 20, 38, 0.035);
   --aurora-wash: rgba(255, 255, 255, 0.6);
   --aurora-blob: 0.2;
 }
@@ -100,24 +100,24 @@ html.dark {
   color-scheme: dark;
 
   /* ---- Brand reads a touch brighter on the dark canvas ------------------- */
-  --color-brand: #13b886;
-  --color-brand-soft: rgba(19, 184, 134, 0.16);
-  --color-brand-strong: #0fa074;
-  --color-iris: #2dd4bf;
-  --color-sky: #14b8a6;
+  --color-brand: #a78bfa;
+  --color-brand-soft: rgba(167, 139, 250, 0.16);
+  --color-brand-strong: #8b5cf6;
+  --color-iris: #fbbf24;
+  --color-sky: #c084fc;
 
-  /* ---- Deep green-tinted near-black canvas ------------------------------- */
-  --color-ink: #070f0c;
-  --color-ink-2: #0b1712;
-  --color-surface: #0e1c15;
-  --color-surface-2: #12241b;
-  --color-elevated: #16291f;
+  /* ---- Deep violet-tinted near-black canvas ------------------------------ */
+  --color-ink: #0d0a18;
+  --color-ink-2: #141021;
+  --color-surface: #181226;
+  --color-surface-2: #1e1733;
+  --color-elevated: #221b39;
 
   /* ---- Text -------------------------------------------------------------- */
-  --color-fg: #e9f3ee;
-  --color-fg-muted: #9cb0a6;
-  --color-fg-subtle: #7b8f85;
-  --color-on-brand: #04130d;       /* dark text on the bright emerald */
+  --color-fg: #ece8f6;
+  --color-fg-muted: #a99fc2;
+  --color-fg-subtle: #8980a0;
+  --color-on-brand: #160d2b;       /* dark text on the bright violet */
 
   /* ---- Lines & interaction surfaces -------------------------------------- */
   --color-line: rgba(255, 255, 255, 0.10);
@@ -126,10 +126,10 @@ html.dark {
   --color-hover-strong: rgba(255, 255, 255, 0.12);
 
   /* ---- Finance data colors (legible on dark) ----------------------------- */
-  --color-positive: #34d399;
-  --color-negative: #fb923c;
+  --color-positive: #4ade80;
+  --color-negative: #f87171;
   --color-warning: #fbbf24;
-  --color-neutral: #8ba398;
+  --color-neutral: #9890a8;
 
   /* glass surface */
   --glass-from: rgba(255, 255, 255, 0.05);
@@ -140,8 +140,8 @@ html.dark {
   --glass-shadow: 0 20px 44px -22px rgba(0, 0, 0, 0.66);
 
   /* skeleton shimmer */
-  --skeleton-base: #12241b;
-  --skeleton-shine: #1c3527;
+  --skeleton-base: #1e1733;
+  --skeleton-shine: #2a2142;
 
   /* scrollbar */
   --scrollbar-thumb: var(--color-line-strong);
@@ -149,7 +149,7 @@ html.dark {
 
   /* ambient backdrop */
   --aurora-grid: rgba(255, 255, 255, 0.04);
-  --aurora-wash: rgba(19, 184, 134, 0.08);
+  --aurora-wash: rgba(167, 139, 250, 0.08);
   --aurora-blob: 0.26;
 }
 

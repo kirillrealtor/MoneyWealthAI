@@ -17,14 +17,14 @@ function seeded(a: number) {
 }
 
 const r = seeded(7);
-const STARS = Array.from({ length: 52 }, () => ({
+const STARS = Array.from({ length: 28 }, () => ({
   top: r() * 88,
   left: r() * 100,
   size: 1 + r() * 1.8,
   delay: r() * 6,
   dur: 2.6 + r() * 4,
 }));
-const PARTICLES = Array.from({ length: 16 }, () => ({
+const PARTICLES = Array.from({ length: 9 }, () => ({
   left: r() * 100,
   delay: r() * 9,
   dur: 7 + r() * 7,
@@ -36,15 +36,15 @@ export function HeroBackdrop() {
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* drifting aurora blobs */}
       <div
-        className="absolute -left-[10%] top-[8%] h-[42vh] w-[42vh] rounded-full opacity-50 blur-[120px] animate-[aurora_24s_ease-in-out_infinite]"
+        className="absolute -left-[10%] top-[8%] h-[42vh] w-[42vh] rounded-full opacity-50 blur-[80px] will-change-transform animate-[aurora_24s_ease-in-out_infinite]"
         style={{ background: "radial-gradient(circle, #7c3aed, transparent 60%)" }}
       />
       <div
-        className="absolute -right-[8%] top-[18%] h-[38vh] w-[38vh] rounded-full opacity-40 blur-[120px] animate-[aurora_30s_ease-in-out_infinite_reverse]"
+        className="absolute -right-[8%] top-[18%] h-[38vh] w-[38vh] rounded-full opacity-40 blur-[80px] will-change-transform animate-[aurora_30s_ease-in-out_infinite_reverse]"
         style={{ background: "radial-gradient(circle, #8b5cf6, transparent 60%)" }}
       />
       <div
-        className="absolute bottom-[-12%] left-[32%] h-[46vh] w-[46vh] rounded-full opacity-40 blur-[130px] animate-[aurora_28s_ease-in-out_infinite]"
+        className="absolute bottom-[-12%] left-[32%] h-[46vh] w-[46vh] rounded-full opacity-40 blur-[80px] will-change-transform animate-[aurora_28s_ease-in-out_infinite]"
         style={{ background: "radial-gradient(circle, #6366f1, transparent 60%)" }}
       />
 

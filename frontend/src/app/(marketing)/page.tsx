@@ -5,10 +5,12 @@ import {
   TrendingUp,
   Target,
   PiggyBank,
+  LayoutDashboard,
+  Wallet,
+  PieChart,
 } from "lucide-react";
 import { AdvisorDemo } from "@/components/marketing/advisor-demo";
 import {
-  StatsStrip,
   HowItWorks,
   FeatureGrid,
   PricingTeaser,
@@ -18,48 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
+import { cn } from "@/lib/utils";
 
 export default function Landing() {
   return (
     <main className="relative">
-      {/* ───────────────────────── Hero ───────────────────────── */}
-      <section className="mx-auto flex max-w-6xl flex-col items-center px-5 pt-40 pb-16 text-center">
-        <div className="animate-[rise_0.6s_ease-out_both]">
-          <Badge tone="brand" className="mb-6 py-1.5">
-            <Sparkles className="size-3.5" />
-            Grounded AI — never invents your numbers
-          </Badge>
-        </div>
-
-        <h1 className="max-w-3xl text-balance text-5xl font-medium leading-[1.05] tracking-tight text-fg animate-[rise_0.6s_ease-out_0.05s_both] sm:text-7xl">
-          Finally{" "}
-          <span className="font-display italic font-normal text-aurora">understand</span>{" "}
-          your money.
-        </h1>
-
-        <p className="mt-6 max-w-xl text-balance text-lg text-fg-muted animate-[rise_0.6s_ease-out_0.1s_both]">
-          MoneyWealth AI connects your real accounts and turns them into clear, grounded
-          guidance — budgets, goals, debt and portfolio — with an AI advisor that
-          shows its work.
-        </p>
-
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-[rise_0.6s_ease-out_0.15s_both]">
-          <Link href="/signup">
-            <Button size="lg">
-              Start free <ArrowRight className="size-4" />
-            </Button>
-          </Link>
-          <a href="#advisor">
-            <Button variant="secondary" size="lg">
-              See the advisor
-            </Button>
-          </a>
-        </div>
-
-      </section>
-
-      {/* trust strip */}
-      <StatsStrip />
+      <Hero />
+      <ProductShowcase />
 
       {/* ───────────────── Advisor showcase (live stream) ───────────────── */}
       <section id="advisor" className="mx-auto max-w-6xl px-5 pt-24 pb-8">
@@ -85,6 +52,126 @@ export default function Landing() {
       <PricingTeaser />
       <FinalCTA />
     </main>
+  );
+}
+
+/* ================================== Hero ================================== */
+function Hero() {
+  return (
+    <section className="relative isolate overflow-hidden bg-[#06120c] text-white">
+      {/* emerald glow rising from the bottom + a teal halo up top */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%]"
+        style={{ background: "radial-gradient(60% 90% at 50% 115%, rgba(14,159,110,0.55), transparent 72%)" }}
+      />
+      <div
+        className="pointer-events-none absolute left-1/2 top-[-12rem] h-[34rem] w-[64rem] -translate-x-1/2 rounded-full opacity-40 blur-[140px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.45), transparent 62%)" }}
+      />
+      {/* faint star grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+          maskImage: "radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)",
+        }}
+      />
+
+      <div className="relative mx-auto max-w-6xl px-5 pt-40 text-center">
+        <h1 className="mx-auto max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-tight animate-[rise_0.6s_ease-out_0.05s_both] sm:text-7xl">
+          <span className="font-display text-[0.92em] font-normal italic text-white/55">Finally</span>{" "}
+          <span className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text text-transparent">understand</span>
+          <br />
+          <span className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text text-transparent">your</span>{" "}
+          <span className="font-display font-normal italic text-white/55">money.</span>
+        </h1>
+
+        <p className="mx-auto mt-7 max-w-xl text-balance text-lg text-white/60 animate-[rise_0.6s_ease-out_0.1s_both]">
+          MoneyWealth AI turns your real accounts into clear, grounded guidance — an AI
+          advisor that shows its work and never invents your numbers.
+        </p>
+
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-[rise_0.6s_ease-out_0.15s_both]">
+          <Link href="/signup">
+            <Button size="lg">
+              Start free <ArrowRight className="size-4" />
+            </Button>
+          </Link>
+          <a
+            href="#advisor"
+            className="inline-flex h-12 items-center gap-2 rounded-[12px] border border-white/20 bg-white/5 px-6 text-[0.95rem] font-medium text-white backdrop-blur transition-colors hover:bg-white/10"
+          >
+            See the advisor
+          </a>
+        </div>
+
+        <ProductCards />
+      </div>
+    </section>
+  );
+}
+
+const PRODUCTS = [
+  { name: "Dashboard", icon: LayoutDashboard, blurb: "Your whole picture" },
+  { name: "Budgets", icon: Wallet, blurb: "Pace, live" },
+  { name: "Advisor", icon: Sparkles, blurb: "Ask anything", featured: true },
+  { name: "Goals", icon: Target, blurb: "Reverse-engineered" },
+  { name: "Portfolio", icon: PieChart, blurb: "Allocation & drift" },
+];
+
+function ProductCards() {
+  return (
+    <div className="mt-16 flex items-end justify-center gap-3 overflow-x-auto px-1 pb-px sm:overflow-visible">
+      {PRODUCTS.map((p, i) => (
+        <div
+          key={p.name}
+          className={cn(
+            "relative shrink-0 rounded-2xl border p-4 text-left backdrop-blur transition-all",
+            "animate-[rise_0.6s_ease-out_both]",
+            p.featured
+              ? "-translate-y-5 border-brand/50 bg-[#08231a] shadow-[0_0_70px_-12px_rgba(14,159,110,0.75)]"
+              : "border-white/10 bg-white/[0.04] hover:border-white/20",
+          )}
+          style={{ width: p.featured ? 188 : 150, animationDelay: `${0.2 + i * 0.05}s` }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-white">{p.name}</span>
+            <p.icon className={cn("size-4", p.featured ? "text-brand" : "text-white/50")} />
+          </div>
+          <div
+            className={cn(
+              "mt-3 grid h-20 place-items-center rounded-lg",
+              p.featured
+                ? "bg-gradient-to-br from-brand/30 to-iris/20 ring-1 ring-brand/30"
+                : "bg-white/[0.04] ring-1 ring-white/5",
+            )}
+          >
+            <p.icon className={cn(p.featured ? "size-7 text-brand" : "size-6 text-white/30")} />
+          </div>
+          <p className="mt-2.5 text-xs text-white/50">{p.blurb}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* =========================== Transition headline =========================== */
+function ProductShowcase() {
+  return (
+    <section className="relative mx-auto max-w-4xl px-5 pt-20 pb-4 text-center">
+      <Badge tone="brand" className="mb-6">
+        <Sparkles className="size-3.5" /> One calm app
+      </Badge>
+      <h2 className="text-balance text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        Where your money finally{" "}
+        <span className="font-display italic font-normal text-aurora">makes sense.</span>
+      </h2>
+      <p className="mx-auto mt-4 max-w-xl text-fg-muted">
+        Every surface answers a real question — and the advisor ties them together.
+      </p>
+    </section>
   );
 }
 

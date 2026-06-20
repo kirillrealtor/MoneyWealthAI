@@ -28,12 +28,12 @@ export default function OgImage() {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: "#0c111c",
+              background: "#0b1b14",
               border: "2px solid rgba(25,230,160,0.5)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#19e6a0",
+              color: "#0e9f6e",
               fontSize: 30,
             }}
           >

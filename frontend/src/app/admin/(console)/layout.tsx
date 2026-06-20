@@ -49,7 +49,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
                   href={href}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    active ? "bg-iris/15 text-iris ring-1 ring-iris/25" : "text-fg-muted hover:bg-white/5 hover:text-fg",
+                    active ? "bg-iris/15 text-iris ring-1 ring-iris/25" : "text-fg-muted hover:bg-black/5 hover:text-fg",
                   )}
                 >
                   <Icon className="size-4" /> {label}
@@ -59,7 +59,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
           </nav>
           <div className="flex items-center gap-3">
             <Badge tone="neutral">{role}</Badge>
-            <button onClick={logout} aria-label="Sign out" className="grid size-8 place-items-center rounded-lg text-fg-subtle hover:bg-white/5 hover:text-fg">
+            <button onClick={logout} aria-label="Sign out" className="grid size-8 place-items-center rounded-lg text-fg-subtle hover:bg-black/5 hover:text-fg">
               <LogOut className="size-4" />
             </button>
           </div>

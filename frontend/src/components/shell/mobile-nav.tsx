@@ -18,7 +18,7 @@ export function MobileNav() {
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger
         aria-label="Open menu"
-        className="grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-white/5 hover:text-fg lg:hidden"
+        className="grid size-10 place-items-center rounded-full text-fg-muted transition-colors hover:bg-black/5 hover:text-fg lg:hidden"
       >
         <Menu className="size-5" />
       </Dialog.Trigger>
@@ -30,7 +30,7 @@ export function MobileNav() {
         >
           <div className="flex items-center justify-between px-2">
             <Logo />
-            <Dialog.Close aria-label="Close menu" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-white/5 hover:text-fg">
+            <Dialog.Close aria-label="Close menu" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-black/5 hover:text-fg">
               <X className="size-4" />
             </Dialog.Close>
           </div>
@@ -42,7 +42,7 @@ export function MobileNav() {
                 return (
                   <span key={href} className="flex items-center justify-between rounded-[12px] px-3 py-2.5 text-sm text-fg-subtle/60">
                     <span className="flex items-center gap-3"><Icon className="size-[18px]" /> {label}</span>
-                    <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[10px]">soon</span>
+                    <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[10px]">soon</span>
                   </span>
                 );
               }
@@ -54,7 +54,7 @@ export function MobileNav() {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm transition-colors",
-                    active ? "bg-brand/12 text-brand ring-1 ring-brand/20" : "text-fg-muted hover:bg-white/5 hover:text-fg",
+                    active ? "bg-brand/12 text-brand ring-1 ring-brand/20" : "text-fg-muted hover:bg-black/5 hover:text-fg",
                   )}
                 >
                   <Icon className="size-[18px]" /> {label}

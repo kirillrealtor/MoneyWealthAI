@@ -67,7 +67,7 @@ export default function AdminOutboxPage() {
                       {r.status === "failed" && (
                         <button
                           onClick={() => retry.mutate(r.outbox_id, { onSuccess: () => toast.success("Re-queued"), onError: () => toast.error("Couldn't re-queue") })}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-fg-muted hover:bg-white/5 hover:text-fg"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-fg-muted hover:bg-black/5 hover:text-fg"
                         >
                           <RefreshCw className="size-3.5" /> Retry
                         </button>

@@ -37,7 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             toast:
               "!glass !rounded-[14px] !text-fg !border-line !text-sm",
             actionButton: "!bg-brand !text-ink !rounded-lg !font-medium",
-            cancelButton: "!bg-white/5 !text-fg-muted !rounded-lg",
+            cancelButton: "!bg-black/5 !text-fg-muted !rounded-lg",
           },
         }}
       />

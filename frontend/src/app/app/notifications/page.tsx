@@ -79,7 +79,7 @@ function Row({ n, onRead }: { n: Notification; onRead: () => void }) {
   const Icon = ICONS[n.type] ?? BellRing;
   return (
     <Panel className={cn("group flex items-start gap-3 py-4", !n.is_read && "ring-1 ring-brand/20")}>
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/5 ring-1 ring-line">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-black/5 ring-1 ring-line">
         <Icon className="size-[18px] text-fg-muted" />
       </span>
       <div className="min-w-0 flex-1">
@@ -96,7 +96,7 @@ function Row({ n, onRead }: { n: Notification; onRead: () => void }) {
         <button
           onClick={onRead}
           aria-label="Mark read"
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-fg-subtle opacity-0 transition-opacity hover:bg-white/5 hover:text-fg group-hover:opacity-100"
+          className="grid size-8 shrink-0 place-items-center rounded-lg text-fg-subtle opacity-0 transition-opacity hover:bg-black/5 hover:text-fg group-hover:opacity-100"
         >
           <Check className="size-4" />
         </button>

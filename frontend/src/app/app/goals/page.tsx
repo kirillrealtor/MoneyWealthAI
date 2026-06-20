@@ -100,7 +100,7 @@ function GoalCard({
           </div>
         </div>
         <div className="flex opacity-0 transition-opacity group-hover:opacity-100">
-          <button onClick={() => onEdit(g)} aria-label="Edit goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-white/5 hover:text-fg">
+          <button onClick={() => onEdit(g)} aria-label="Edit goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-black/5 hover:text-fg">
             <Pencil className="size-4" />
           </button>
           <button onClick={() => onDelete(g)} aria-label="Delete goal" className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-negative/10 hover:text-negative">
@@ -143,8 +143,8 @@ function GoalRing({ pct }: { pct: number }) {
       />
       <defs>
         <linearGradient id="goalgrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#19e6a0" />
-          <stop offset="1" stopColor="#38bdf8" />
+          <stop offset="0" stopColor="#0e9f6e" />
+          <stop offset="1" stopColor="#14b8a6" />
         </linearGradient>
       </defs>
       <text x="30" y="31" transform="rotate(90 30 30)" textAnchor="middle" dominantBaseline="middle" className="fill-fg text-[12px] font-medium tnum">

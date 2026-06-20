@@ -26,7 +26,7 @@ export function Sidebar() {
                 <span className="flex items-center gap-3">
                   <Icon className="size-[18px]" /> {label}
                 </span>
-                <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[10px] text-fg-subtle">
+                <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] text-fg-subtle">
                   soon
                 </span>
               </span>
@@ -41,7 +41,7 @@ export function Sidebar() {
                 "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm transition-colors",
                 active
                   ? "bg-brand/12 text-brand ring-1 ring-brand/20"
-                  : "text-fg-muted hover:bg-white/5 hover:text-fg",
+                  : "text-fg-muted hover:bg-black/5 hover:text-fg",
               )}
             >
               <Icon className="size-[18px]" /> {label}

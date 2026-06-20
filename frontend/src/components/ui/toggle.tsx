@@ -23,7 +23,7 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 disabled:opacity-50",
-        checked ? "bg-brand" : "bg-white/10",
+        checked ? "bg-brand" : "bg-black/10",
       )}
     >
       <span

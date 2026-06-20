@@ -9,15 +9,15 @@ const button = cva(
   {
     variants: {
       variant: {
-        // primary: mint fill with an aurora glow that intensifies on hover
+        // primary: emerald fill with a soft glow that intensifies on hover
         primary:
-          "bg-brand text-ink font-semibold shadow-[0_8px_30px_-8px_rgba(25,230,160,0.6)] hover:shadow-[0_10px_40px_-6px_rgba(25,230,160,0.8)] hover:brightness-110",
+          "bg-brand text-white font-semibold shadow-[0_8px_24px_-10px_rgba(14,159,110,0.55)] hover:shadow-[0_12px_30px_-8px_rgba(14,159,110,0.7)] hover:brightness-[1.05]",
         // secondary: glass
         secondary:
-          "glass text-fg hover:ring-glow hover:text-white",
-        ghost: "text-fg-muted hover:text-fg hover:bg-white/5",
+          "glass text-fg hover:ring-glow hover:text-brand",
+        ghost: "text-fg-muted hover:text-fg hover:bg-black/5",
         outline:
-          "border border-line-strong text-fg hover:border-brand/50 hover:text-white",
+          "border border-line-strong text-fg hover:border-brand/50 hover:text-brand",
         danger:
           "bg-negative/15 text-negative border border-negative/30 hover:bg-negative/25",
         link: "text-brand underline-offset-4 hover:underline p-0 h-auto",

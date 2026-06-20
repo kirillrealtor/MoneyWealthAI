@@ -68,7 +68,7 @@ function ItemCard({ item }: { item: PlaidItem }) {
     <Panel>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/5 ring-1 ring-line">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-black/5 ring-1 ring-line">
             <Landmark className="size-5 text-fg-muted" />
           </span>
           <div>

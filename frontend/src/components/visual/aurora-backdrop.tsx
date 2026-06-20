@@ -13,21 +13,21 @@ export function AuroraBackdrop() {
     >
       {/* aurora blobs — emerald/teal read well on both themes; opacity flips */}
       <div
-        className="absolute -top-[20%] left-[8%] h-[55vh] w-[55vh] rounded-full blur-[140px] animate-[aurora_22s_ease-in-out_infinite]"
+        className="absolute -top-[20%] left-[8%] h-[55vh] w-[55vh] rounded-full blur-[90px] will-change-transform animate-[aurora_22s_ease-in-out_infinite]"
         style={{
           background: "radial-gradient(circle, var(--color-brand), transparent 60%)",
           opacity: "var(--aurora-blob)",
         }}
       />
       <div
-        className="absolute top-[12%] right-[2%] h-[48vh] w-[48vh] rounded-full blur-[130px] animate-[aurora_28s_ease-in-out_infinite_reverse]"
+        className="absolute top-[12%] right-[2%] h-[48vh] w-[48vh] rounded-full blur-[90px] will-change-transform animate-[aurora_28s_ease-in-out_infinite_reverse]"
         style={{
           background: "radial-gradient(circle, var(--color-iris), transparent 60%)",
           opacity: "calc(var(--aurora-blob) + 0.05)",
         }}
       />
       <div
-        className="absolute bottom-[-15%] left-[38%] h-[50vh] w-[50vh] rounded-full blur-[140px] animate-[aurora_32s_ease-in-out_infinite]"
+        className="absolute bottom-[-15%] left-[38%] h-[50vh] w-[50vh] rounded-full blur-[90px] will-change-transform animate-[aurora_32s_ease-in-out_infinite]"
         style={{
           background: "radial-gradient(circle, var(--color-sky), transparent 60%)",
           opacity: "var(--aurora-blob)",

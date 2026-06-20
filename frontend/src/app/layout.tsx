@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { AuroraBackdrop } from "@/components/visual/aurora-backdrop";
 import { Providers } from "@/components/providers";
+import { THEME_SCRIPT } from "@/lib/theme/script";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -37,8 +39,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6fbf8",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7faf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#070f0c" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default async function RootLayout({
@@ -47,16 +52,22 @@ export default async function RootLayout({
   // Opt into dynamic rendering so the per-request CSP nonce (proxy.ts) is
   // stamped onto Next's scripts — a nonce can't be applied to a static page.
   await connection();
+  // The blocking theme script is inline, so it needs the same per-request nonce
+  // the CSP allows; without it 'strict-dynamic' would block it.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-full">
+        {/* Sets the theme class on <html> before first paint — no flash. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:font-medium focus:text-ink"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:font-medium focus:text-on-brand"
         >
           Skip to content
         </a>

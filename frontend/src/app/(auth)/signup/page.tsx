@@ -158,7 +158,7 @@ export default function SignupPage() {
                         ? pw.score <= 2
                           ? "bg-warning"
                           : "bg-positive"
-                        : "bg-black/10"
+                        : "bg-hover-strong"
                     }`}
                   />
                 ))}

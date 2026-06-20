@@ -1,33 +1,42 @@
 @import "tailwindcss";
 
+/* Manual dark mode — driven by `.dark` on <html> (set by the theme script and
+   the ThemeToggle), not the OS media query, so the in-app toggle is authoritative. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================================
    MoneyWealth AI — Design system  ·  "Emerald Calm"
-   Light-first, reassuring money app. Mint-white canvas, confident emerald,
-   soft sage surfaces, tabular money, restrained spring motion.
+   White-first, reassuring money app with a single signature color (emerald).
+   Full light + dark themes: every token below flips under `.dark`, so the
+   whole product re-themes from one place. Tabular money, restrained motion.
    ========================================================================== */
 
 @theme {
-  /* ---- Brand & accent ---------------------------------------------------- */
+  /* ---- Brand & accent (the one major color) ------------------------------ */
   --color-brand: #0e9f6e;          /* emerald — the signature */
-  --color-brand-soft: #e6f6ee;     /* tinted wash for soft fills */
-  --color-iris: #0e9aa5;           /* teal counterpoint */
+  --color-brand-soft: #e7f6ef;     /* tinted wash for soft fills */
+  --color-brand-strong: #0b8a5f;   /* pressed / deep emerald */
+  --color-iris: #0e9aa5;           /* teal counterpoint (gradients only) */
   --color-sky: #14b8a6;            /* teal-green for the gradient mid */
 
   /* ---- Canvas & surfaces ------------------------------------------------- */
-  --color-ink: #f6fbf8;            /* page canvas — mint white */
-  --color-ink-2: #eef6f1;
+  --color-ink: #f7faf9;            /* page canvas — near-white */
+  --color-ink-2: #eef4f1;
   --color-surface: #ffffff;        /* raised panel base */
-  --color-surface-2: #f1f8f4;
+  --color-surface-2: #f1f6f3;
   --color-elevated: #ffffff;
 
-  /* ---- Text (WCAG AA on white + mint) ------------------------------------ */
-  --color-fg: #0b1b14;
-  --color-fg-muted: #45584e;
-  --color-fg-subtle: #5a6d64;
+  /* ---- Text (WCAG AA on the canvas) -------------------------------------- */
+  --color-fg: #0a1713;
+  --color-fg-muted: #45554e;
+  --color-fg-subtle: #6a7a72;
+  --color-on-brand: #ffffff;       /* stable readable text on brand fills */
 
-  /* ---- Lines ------------------------------------------------------------- */
-  --color-line: rgba(11, 27, 20, 0.10);
-  --color-line-strong: rgba(11, 27, 20, 0.16);
+  /* ---- Lines & interaction surfaces -------------------------------------- */
+  --color-line: rgba(6, 24, 16, 0.10);
+  --color-line-strong: rgba(6, 24, 16, 0.16);
+  --color-hover: rgba(6, 24, 16, 0.05);       /* subtle hover wash */
+  --color-hover-strong: rgba(6, 24, 16, 0.10); /* tracks, chips, dividers */
 
   /* ---- Finance data colors (semantic; pair with +/- glyphs) -------------- */
   --color-positive: #0e9f6e;       /* emerald */
@@ -58,6 +67,95 @@
   --animate-breathe: breathe 9s ease-in-out infinite;
 }
 
+/* ----------------------------------------------------------------------------
+   Theme variables — composite tokens that flip per theme. Kept out of @theme
+   so they stay plain custom properties (not turned into utilities).
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* glass surface */
+  --glass-from: rgba(255, 255, 255, 0.75);
+  --glass-to: rgba(255, 255, 255, 0.45);
+  --glass-base: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  --glass-border: var(--color-line);
+  --glass-inset: 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 12px 30px -18px rgba(6, 24, 16, 0.18);
+
+  /* skeleton shimmer */
+  --skeleton-base: var(--color-surface-2);
+  --skeleton-shine: #e6f1ea;
+
+  /* scrollbar */
+  --scrollbar-thumb: var(--color-line-strong);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--color-fg) 28%, transparent);
+
+  /* ambient backdrop */
+  --aurora-grid: rgba(6, 24, 16, 0.035);
+  --aurora-wash: rgba(255, 255, 255, 0.6);
+  --aurora-blob: 0.2;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  /* ---- Brand reads a touch brighter on the dark canvas ------------------- */
+  --color-brand: #13b886;
+  --color-brand-soft: rgba(19, 184, 134, 0.16);
+  --color-brand-strong: #0fa074;
+  --color-iris: #2dd4bf;
+  --color-sky: #14b8a6;
+
+  /* ---- Deep green-tinted near-black canvas ------------------------------- */
+  --color-ink: #070f0c;
+  --color-ink-2: #0b1712;
+  --color-surface: #0e1c15;
+  --color-surface-2: #12241b;
+  --color-elevated: #16291f;
+
+  /* ---- Text -------------------------------------------------------------- */
+  --color-fg: #e9f3ee;
+  --color-fg-muted: #9cb0a6;
+  --color-fg-subtle: #7b8f85;
+  --color-on-brand: #04130d;       /* dark text on the bright emerald */
+
+  /* ---- Lines & interaction surfaces -------------------------------------- */
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-line-strong: rgba(255, 255, 255, 0.18);
+  --color-hover: rgba(255, 255, 255, 0.06);
+  --color-hover-strong: rgba(255, 255, 255, 0.12);
+
+  /* ---- Finance data colors (legible on dark) ----------------------------- */
+  --color-positive: #34d399;
+  --color-negative: #fb923c;
+  --color-warning: #fbbf24;
+  --color-neutral: #8ba398;
+
+  /* glass surface */
+  --glass-from: rgba(255, 255, 255, 0.05);
+  --glass-to: rgba(255, 255, 255, 0.015);
+  --glass-base: color-mix(in oklab, var(--color-surface) 84%, transparent);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-inset: 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 20px 44px -22px rgba(0, 0, 0, 0.66);
+
+  /* skeleton shimmer */
+  --skeleton-base: #12241b;
+  --skeleton-shine: #1c3527;
+
+  /* scrollbar */
+  --scrollbar-thumb: var(--color-line-strong);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--color-fg) 32%, transparent);
+
+  /* ambient backdrop */
+  --aurora-grid: rgba(255, 255, 255, 0.04);
+  --aurora-wash: rgba(19, 184, 134, 0.08);
+  --aurora-blob: 0.26;
+}
+
+/* ----------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
 @keyframes aurora {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   33% { transform: translate3d(6%, -4%, 0) scale(1.12); }
@@ -108,9 +206,9 @@
 /* ----------------------------------------------------------------------------
    Base
    -------------------------------------------------------------------------- */
-:root { color-scheme: light; }
-
 * { border-color: var(--color-line); }
+
+html { background: var(--color-ink); }
 
 body {
   background: var(--color-ink);
@@ -118,22 +216,24 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "cv01";
+  /* Smooth the theme flip without animating layout-affecting properties. */
+  transition: background-color 0.4s var(--ease-spring), color 0.3s var(--ease-spring);
 }
 
 /* All numerals tabular by default so money never jitters. */
 .tnum, .font-mono { font-variant-numeric: tabular-nums; }
 
-::selection { background: color-mix(in oklab, var(--color-brand) 22%, transparent); }
+::selection { background: color-mix(in oklab, var(--color-brand) 24%, transparent); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-line-strong);
+  background: var(--scrollbar-thumb);
   border-radius: 99px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(11, 27, 20, 0.28);
+  background: var(--scrollbar-thumb-hover);
   background-clip: content-box;
 }
 
@@ -146,26 +246,24 @@ body {
 }
 
 /* ----------------------------------------------------------------------------
-   Signature utilities — the look
+   Signature utilities — the look (theme-aware)
    -------------------------------------------------------------------------- */
 
-/* Glass panel: translucent white surface, hairline border, soft lift */
+/* Glass panel: translucent surface, hairline border, soft lift */
 @utility glass {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.45)),
-    color-mix(in oklab, var(--color-surface) 90%, transparent);
+    linear-gradient(180deg, var(--glass-from), var(--glass-to)),
+    var(--glass-base);
   backdrop-filter: blur(18px) saturate(120%);
-  border: 1px solid var(--color-line);
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
-    0 12px 30px -18px rgba(11, 27, 20, 0.18);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-inset) inset, var(--glass-shadow);
 }
 
 /* Hairline ring that catches a soft emerald glow */
 @utility ring-glow {
   box-shadow:
     0 0 0 1px var(--color-line-strong),
-    0 10px 34px -16px color-mix(in oklab, var(--color-brand) 40%, transparent);
+    0 10px 34px -16px color-mix(in oklab, var(--color-brand) 45%, transparent);
 }
 
 /* Brand text gradient */
@@ -190,9 +288,9 @@ body {
 @utility skeleton {
   background: linear-gradient(
     90deg,
-    var(--color-surface-2) 25%,
-    #e6f1ea 37%,
-    var(--color-surface-2) 63%
+    var(--skeleton-base) 25%,
+    var(--skeleton-shine) 37%,
+    var(--skeleton-base) 63%
   );
   background-size: 200% 100%;
   animation: var(--animate-shimmer);

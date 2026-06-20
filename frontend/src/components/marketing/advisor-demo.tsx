@@ -145,7 +145,7 @@ export function AdvisorDemo() {
                 </p>
                 {state.phase === "done" && (
                   <div className="mt-3 flex items-center gap-2 text-xs text-fg-subtle">
-                    <span className="rounded-md bg-black/5 px-2 py-1 ring-1 ring-line">
+                    <span className="rounded-md bg-hover px-2 py-1 ring-1 ring-line">
                       ↳ checked <span className="text-fg-muted">{turn.tools}</span>
                     </span>
                   </div>
@@ -162,7 +162,7 @@ export function AdvisorDemo() {
           <span
             key={i}
             className={`h-1 rounded-full transition-all duration-300 ${
-              i === state.turn ? "w-6 bg-brand" : "w-1.5 bg-black/15"
+              i === state.turn ? "w-6 bg-brand" : "w-1.5 bg-hover-strong"
             }`}
           />
         ))}

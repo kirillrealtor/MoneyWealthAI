@@ -60,7 +60,7 @@ export default function AdminPlaidOps() {
                       <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => resync.mutate(j.item_id, { onSuccess: () => toast.success("Re-sync queued"), onError: () => toast.error("Couldn't queue re-sync") })}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-fg-muted hover:bg-black/5 hover:text-fg"
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-fg-muted hover:bg-hover hover:text-fg"
                         >
                           <RefreshCw className="size-3.5" /> Re-sync
                         </button>

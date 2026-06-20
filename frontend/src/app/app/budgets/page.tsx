@@ -96,7 +96,7 @@ function BudgetCard({
     <Panel className="group">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-black/5 ring-1 ring-line">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-hover ring-1 ring-line">
             <Wallet className="size-5 text-fg-muted" />
           </span>
           <div className="min-w-0">
@@ -118,7 +118,7 @@ function BudgetCard({
             <button
               onClick={() => onEdit(b)}
               aria-label="Edit budget"
-              className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-black/5 hover:text-fg"
+              className="grid size-9 place-items-center rounded-lg text-fg-subtle hover:bg-hover hover:text-fg"
             >
               <Pencil className="size-4" />
             </button>
@@ -132,7 +132,7 @@ function BudgetCard({
           </div>
         </div>
       </div>
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-black/5">
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-hover">
         <div
           className={cn(
             "h-full rounded-full transition-all",

@@ -20,22 +20,27 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
+import { Reveal } from "@/components/visual/reveal";
 import { cn } from "@/lib/utils";
 
 export default function Landing() {
   return (
     <main className="relative">
       <Hero />
-      <ProductShowcase />
+      <Reveal>
+        <ProductShowcase />
+      </Reveal>
 
       {/* ───────────────── Advisor showcase (live stream) ───────────────── */}
       <section id="advisor" className="mx-auto max-w-6xl px-5 pt-24 pb-8">
-        <AdvisorShowcase />
+        <Reveal>
+          <AdvisorShowcase />
+        </Reveal>
       </section>
 
       {/* ───────────────── Bento product preview ───────────────── */}
       <section className="mx-auto max-w-6xl px-5 py-20">
-        <div className="mb-10 text-center">
+        <Reveal className="mb-10 text-center">
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-brand">
             Your money, at a glance
           </span>
@@ -43,14 +48,16 @@ export default function Landing() {
             Not a dashboard dump — each surface answers a{" "}
             <span className="font-display italic text-aurora">real</span> question.
           </h2>
-        </div>
-        <BentoGrid />
+        </Reveal>
+        <Reveal delay={0.1}>
+          <BentoGrid />
+        </Reveal>
       </section>
 
-      <HowItWorks />
-      <FeatureGrid />
-      <PricingTeaser />
-      <FinalCTA />
+      <Reveal><HowItWorks /></Reveal>
+      <Reveal><FeatureGrid /></Reveal>
+      <Reveal><PricingTeaser /></Reveal>
+      <Reveal><FinalCTA /></Reveal>
     </main>
   );
 }
@@ -59,13 +66,13 @@ export default function Landing() {
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-[#06120c] text-white">
-      {/* emerald glow rising from the bottom + a teal halo up top */}
+      {/* emerald glow rising from the bottom + a teal halo up top (breathing) */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%] animate-breathe"
         style={{ background: "radial-gradient(60% 90% at 50% 115%, rgba(14,159,110,0.55), transparent 72%)" }}
       />
       <div
-        className="pointer-events-none absolute left-1/2 top-[-12rem] h-[34rem] w-[64rem] -translate-x-1/2 rounded-full opacity-40 blur-[140px]"
+        className="pointer-events-none absolute left-1/2 top-[-12rem] h-[34rem] w-[64rem] -translate-x-1/2 rounded-full opacity-40 blur-[140px] animate-breathe [animation-delay:-4s]"
         style={{ background: "radial-gradient(circle, rgba(20,184,166,0.45), transparent 62%)" }}
       />
       {/* faint star grid */}
@@ -82,9 +89,9 @@ function Hero() {
       <div className="relative mx-auto max-w-6xl px-5 pt-40 text-center">
         <h1 className="mx-auto max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-tight animate-[rise_0.6s_ease-out_0.05s_both] sm:text-7xl">
           <span className="font-display text-[0.92em] font-normal italic text-white/55">Finally</span>{" "}
-          <span className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text text-transparent">understand</span>
+          <span className="text-metallic">understand</span>
           <br />
-          <span className="bg-gradient-to-b from-white to-zinc-400 bg-clip-text text-transparent">your</span>{" "}
+          <span className="text-metallic">your</span>{" "}
           <span className="font-display font-normal italic text-white/55">money.</span>
         </h1>
 
@@ -130,9 +137,10 @@ function ProductCards() {
           className={cn(
             "relative shrink-0 rounded-2xl border p-4 text-left backdrop-blur transition-all",
             "animate-[rise_0.6s_ease-out_both]",
+            "duration-300 will-change-transform",
             p.featured
-              ? "-translate-y-5 border-brand/50 bg-[#08231a] shadow-[0_0_70px_-12px_rgba(14,159,110,0.75)]"
-              : "border-white/10 bg-white/[0.04] hover:border-white/20",
+              ? "-translate-y-5 border-brand/50 bg-[#08231a] shadow-[0_0_70px_-12px_rgba(14,159,110,0.75)] hover:-translate-y-7 hover:shadow-[0_0_90px_-10px_rgba(14,159,110,0.9)]"
+              : "border-white/10 bg-white/[0.04] hover:-translate-y-2 hover:border-brand/30 hover:bg-white/[0.07] hover:shadow-[0_18px_50px_-20px_rgba(14,159,110,0.5)]",
           )}
           style={{ width: p.featured ? 188 : 150, animationDelay: `${0.2 + i * 0.05}s` }}
         >

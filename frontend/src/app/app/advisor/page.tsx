@@ -81,11 +81,14 @@ export default function AdvisorPage() {
       ]);
     } catch (err) {
       const code = err instanceof ApiRequestError ? err.payload.code : "";
+      const serverMsg = err instanceof ApiRequestError ? err.payload.message : "";
       const content =
         code === "AI_UNAVAILABLE"
           ? "The advisor is temporarily unavailable. Every other feature keeps working — please try again in a moment."
           : code === "RATE_LIMITED"
-            ? "You're sending messages quickly — give it a few seconds and try again."
+            ? // RATE_LIMITED covers both the per-minute cap and the daily token
+              // budget — show the server's specific reason when it has one.
+              serverMsg || "You're sending messages quickly — give it a few seconds and try again."
             : "Something went wrong reaching the advisor. Please try again.";
       setMessages((m) => [...m, { id: crypto.randomUUID(), role: "error", content }]);
     }

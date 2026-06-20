@@ -27,7 +27,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
               padding: "10px 20px",
               borderRadius: 12,
               border: "none",
-              background: "#0e9f6e",
+              background: "#7c3aed",
               color: "#06090f",
               fontWeight: 600,
               cursor: "pointer",

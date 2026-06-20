@@ -11,7 +11,7 @@ const button = cva(
       variant: {
         // primary: emerald fill with a soft glow that intensifies on hover
         primary:
-          "bg-brand text-on-brand font-semibold shadow-[0_8px_24px_-10px_rgba(14,159,110,0.55)] hover:shadow-[0_12px_30px_-8px_rgba(14,159,110,0.7)] hover:brightness-[1.05]",
+          "bg-brand text-on-brand font-semibold shadow-[0_8px_24px_-10px_rgba(124,58,237,0.55)] hover:shadow-[0_12px_30px_-8px_rgba(124,58,237,0.7)] hover:brightness-[1.05]",
         // secondary: glass
         secondary:
           "glass text-fg hover:ring-glow hover:text-brand",

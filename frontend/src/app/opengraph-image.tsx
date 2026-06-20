@@ -15,10 +15,10 @@ export default function OgImage() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "80px",
-          background: "#06090f",
+          background: "#160d2b",
           backgroundImage:
-            "radial-gradient(circle at 15% 10%, rgba(25,230,160,0.30), transparent 45%), radial-gradient(circle at 85% 90%, rgba(124,139,255,0.25), transparent 45%)",
-          color: "#eaf0f8",
+            "radial-gradient(circle at 15% 10%, rgba(124,58,237,0.38), transparent 45%), radial-gradient(circle at 85% 90%, rgba(168,85,247,0.28), transparent 45%)",
+          color: "#ece8f6",
           fontFamily: "sans-serif",
         }}
       >
@@ -28,12 +28,12 @@ export default function OgImage() {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: "#0b1b14",
-              border: "2px solid rgba(25,230,160,0.5)",
+              background: "#241640",
+              border: "2px solid rgba(124,58,237,0.55)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#0e9f6e",
+              color: "#7c3aed",
               fontSize: 30,
             }}
           >
@@ -44,7 +44,7 @@ export default function OgImage() {
         <div style={{ fontSize: 72, fontWeight: 600, lineHeight: 1.05, maxWidth: 900 }}>
           Finally understand your money.
         </div>
-        <div style={{ fontSize: 32, color: "#aab6cb", marginTop: 28, maxWidth: 820 }}>
+        <div style={{ fontSize: 32, color: "#a99fc2", marginTop: 28, maxWidth: 820 }}>
           A grounded AI financial advisor over your real bank data — budgets, goals, debt &
           portfolio.
         </div>

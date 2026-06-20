@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
 import { usePortfolio } from "@/lib/api/portfolio";
 
-const COLORS = ["#0e9f6e", "#14b8a6", "#0e9aa5", "#f59e0b", "#f97316", "#34d399"];
+const COLORS = ["#7c3aed", "#8b5cf6", "#6366f1", "#f59e0b", "#f97316", "#a78bfa"];
 
 export default function PortfolioPage() {
   const { data, isLoading, isError } = usePortfolio();

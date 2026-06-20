@@ -37,15 +37,15 @@ export function HeroBackdrop() {
       {/* drifting aurora blobs */}
       <div
         className="absolute -left-[10%] top-[8%] h-[42vh] w-[42vh] rounded-full opacity-50 blur-[120px] animate-[aurora_24s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #0e9f6e, transparent 60%)" }}
+        style={{ background: "radial-gradient(circle, #7c3aed, transparent 60%)" }}
       />
       <div
         className="absolute -right-[8%] top-[18%] h-[38vh] w-[38vh] rounded-full opacity-40 blur-[120px] animate-[aurora_30s_ease-in-out_infinite_reverse]"
-        style={{ background: "radial-gradient(circle, #14b8a6, transparent 60%)" }}
+        style={{ background: "radial-gradient(circle, #8b5cf6, transparent 60%)" }}
       />
       <div
         className="absolute bottom-[-12%] left-[32%] h-[46vh] w-[46vh] rounded-full opacity-40 blur-[130px] animate-[aurora_28s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #0e9aa5, transparent 60%)" }}
+        style={{ background: "radial-gradient(circle, #6366f1, transparent 60%)" }}
       />
 
       {/* twinkling starfield */}
@@ -72,8 +72,8 @@ export function HeroBackdrop() {
             left: `${p.left}%`,
             width: p.size,
             height: p.size,
-            background: "rgba(52,211,153,0.9)",
-            boxShadow: "0 0 8px rgba(14,159,110,0.85)",
+            background: "rgba(167,139,250,0.9)",
+            boxShadow: "0 0 8px rgba(124,58,237,0.85)",
             animation: `particle-rise ${p.dur}s linear ${p.delay}s infinite`,
           }}
         />
@@ -99,7 +99,7 @@ export function HeroBackdrop() {
       {/* breathing emerald floor glow */}
       <div
         className="absolute inset-x-0 bottom-0 h-[72%] animate-breathe"
-        style={{ background: "radial-gradient(60% 90% at 50% 116%, rgba(14,159,110,0.5), transparent 72%)" }}
+        style={{ background: "radial-gradient(60% 90% at 50% 116%, rgba(124,58,237,0.5), transparent 72%)" }}
       />
     </div>
   );

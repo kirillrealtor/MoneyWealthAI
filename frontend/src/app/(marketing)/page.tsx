@@ -21,6 +21,7 @@ import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/ui/money";
 import { Reveal } from "@/components/visual/reveal";
+import { HeroBackdrop } from "@/components/visual/hero-backdrop";
 import { cn } from "@/lib/utils";
 
 export default function Landing() {
@@ -66,33 +67,17 @@ export default function Landing() {
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-[#06120c] text-white">
-      {/* emerald glow rising from the bottom + a teal halo up top (breathing) */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%] animate-breathe"
-        style={{ background: "radial-gradient(60% 90% at 50% 115%, rgba(14,159,110,0.55), transparent 72%)" }}
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-[-12rem] h-[34rem] w-[64rem] -translate-x-1/2 rounded-full opacity-40 blur-[140px] animate-breathe [animation-delay:-4s]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.45), transparent 62%)" }}
-      />
-      {/* faint star grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px)",
-          backgroundSize: "26px 26px",
-          maskImage: "radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)",
-        }}
-      />
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-6xl px-5 pt-40 text-center">
-        <h1 className="mx-auto max-w-4xl text-balance text-5xl font-semibold leading-[1.02] tracking-tight animate-[rise_0.6s_ease-out_0.05s_both] sm:text-7xl">
-          <span className="font-display text-[0.92em] font-normal italic text-white/55">Finally</span>{" "}
+        <h1 className="mx-auto max-w-4xl text-balance text-6xl font-semibold leading-[0.95] tracking-[-0.025em] animate-[rise_0.7s_ease-out_0.05s_both] [text-shadow:0_2px_60px_rgba(14,159,110,0.28)] sm:text-[5.75rem]">
+          <span className="font-display text-[0.78em] font-normal italic text-white/45">Finally</span>{" "}
           <span className="text-metallic">understand</span>
           <br />
           <span className="text-metallic">your</span>{" "}
-          <span className="font-display font-normal italic text-white/55">money.</span>
+          <span className="bg-gradient-to-br from-brand via-sky to-iris bg-clip-text font-display font-normal italic text-transparent">
+            money.
+          </span>
         </h1>
 
         <p className="mx-auto mt-7 max-w-xl text-balance text-lg text-white/60 animate-[rise_0.6s_ease-out_0.1s_both]">

@@ -75,7 +75,7 @@ function Hero() {
           <span className="text-metallic">understand</span>
           <br />
           <span className="text-metallic">your</span>{" "}
-          <span className="bg-gradient-to-br from-brand via-sky to-iris bg-clip-text font-display font-normal italic text-transparent">
+          <span className="bg-gradient-to-br from-brand via-sky to-iris bg-clip-text text-transparent">
             money.
           </span>
         </h1>

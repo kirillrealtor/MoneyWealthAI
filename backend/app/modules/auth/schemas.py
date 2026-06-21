@@ -28,6 +28,13 @@ class LoginRequest(BaseModel):
     captcha_token: str | None = None
 
 
+class GoogleAuthRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Google Identity Services ID token (a signed JWT from the browser).
+    id_token: str = Field(min_length=1, max_length=8192)
+
+
 class ResendVerificationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput, Field } from "@/components/ui/input";
+import { GoogleAuthSection } from "@/components/auth/google-button";
 import { useAuth } from "@/lib/auth/context";
 import type { ApiError } from "@/lib/auth/types";
 
@@ -102,6 +103,8 @@ function LoginForm() {
           Log in
         </Button>
       </form>
+
+      <GoogleAuthSection />
 
       <p className="mt-6 text-center text-sm text-fg-muted">
         New to MoneyWealth AI?{" "}

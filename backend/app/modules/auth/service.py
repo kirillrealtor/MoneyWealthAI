@@ -7,8 +7,12 @@ tenant_id so the tenant can be resolved without a circular read of users.
 """
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import jwt
 
 from app import db
 from app.audit import audit
@@ -183,7 +187,10 @@ async def signup(
     return user_id
 
 
-async def verify_email(raw_token: str) -> None:
+async def verify_email(raw_token: str, ctx: AuthCtx) -> TokenPair:
+    """Verify the emailed token AND log the user straight in — clicking the link
+    proves control of the inbox, so we issue a session and the user lands on the
+    dashboard with no extra login step."""
     # Token lookup is secret-keyed (cross-tenant by nature); carries tenant_id.
     row = await db.fetchrow(
         """SELECT token_id, user_id, tenant_id FROM email_verification_tokens
@@ -194,10 +201,84 @@ async def verify_email(raw_token: str) -> None:
     if not row:
         raise ApiError("VALIDATION_ERROR", message="Invalid or expired verification token.")
 
+    tenant = str(row["tenant_id"])
+    user_id = str(row["user_id"])
     await db.execute("UPDATE email_verification_tokens SET consumed_at = NOW() WHERE token_id = $1", row["token_id"])
-    async with db.with_tenant(str(row["tenant_id"])) as conn:
-        await conn.execute("UPDATE users SET is_verified = true WHERE user_id = $1", row["user_id"])
-    await audit("user.email_verified", user_id=str(row["user_id"]), resource="user", resource_id=str(row["user_id"]))
+    async with db.with_tenant(tenant) as conn:
+        await conn.execute(
+            "UPDATE users SET is_verified = true, last_login_at = NOW() WHERE user_id = $1", row["user_id"]
+        )
+        tier = await conn.fetchval("SELECT tier FROM users WHERE user_id = $1", row["user_id"])
+    await audit("user.email_verified", user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id)
+    return await _issue_pair(user_id, tenant, tier or "free", ctx)
+
+
+async def _verify_google_id_token(raw_id_token: str) -> dict[str, Any]:
+    """Verify a Google ID token against Google's public keys (RS256), checking
+    issuer + audience (our client id). Runs the blocking JWKS fetch off-loop."""
+    if not settings.google_client_id:
+        raise ApiError("VALIDATION_ERROR", message="Google sign-in is not configured.")
+
+    def _decode() -> dict[str, Any]:
+        jwks = jwt.PyJWKClient("https://www.googleapis.com/oauth2/v3/certs")
+        key = jwks.get_signing_key_from_jwt(raw_id_token).key
+        return jwt.decode(raw_id_token, key, algorithms=["RS256"], audience=settings.google_client_id)
+
+    try:
+        claims = await asyncio.to_thread(_decode)
+    except ApiError:
+        raise
+    except Exception as err:  # noqa: BLE001 - any verification failure = reject
+        logger.warning("google id_token verification failed", service="auth", error_message=str(err))
+        raise ApiError("UNAUTHORIZED", message="Could not verify your Google sign-in.") from err
+    if claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+        raise ApiError("UNAUTHORIZED", message="Invalid Google token issuer.")
+    if not claims.get("email") or claims.get("email_verified") is not True:
+        raise ApiError("UNAUTHORIZED", message="Your Google account email isn't verified.")
+    return claims
+
+
+async def google_auth(*, id_token: str, tenant_id: str | None, ctx: AuthCtx) -> TokenPair:
+    """Continue with Google: verify the ID token, then upsert the (pre-verified)
+    user and issue a session."""
+    claims = await _verify_google_id_token(id_token)
+    tenant = tenant_id or settings.default_tenant_id
+    email = claims["email"].lower().strip()
+    sub = str(claims["sub"])
+    name = claims.get("name") or claims.get("given_name")
+
+    async with db.with_tenant(tenant) as conn:
+        user = await conn.fetchrow(
+            "SELECT user_id, tier FROM users WHERE tenant_id = $1 AND email = $2", tenant, email
+        )
+        if user is None:
+            user_id = str(
+                await conn.fetchval(
+                    """INSERT INTO users (tenant_id, email, full_name, is_verified, auth_provider, oauth_sub)
+                       VALUES ($1, $2, $3, true, 'google', $4) RETURNING user_id""",
+                    tenant, email, name, sub,
+                )
+            )
+            await conn.execute(
+                "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
+            )
+            tier = "free"
+            created = True
+        else:
+            user_id = str(user["user_id"])
+            tier = user["tier"]
+            created = False
+            # Link the Google identity to an existing account + mark verified.
+            await conn.execute(
+                """UPDATE users SET is_verified = true, last_login_at = NOW(),
+                       oauth_sub = COALESCE(oauth_sub, $2) WHERE user_id = $1""",
+                user_id, sub,
+            )
+    await audit(
+        "user.google_signup" if created else "user.google_login",
+        user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id, ip_address=ctx.ip,
+    )
+    return await _issue_pair(user_id, tenant, tier, ctx)
 
 
 RESET_TTL = timedelta(hours=1)
@@ -278,7 +359,8 @@ async def login(
         )
 
     # Always spend ~equal CPU whether or not the account exists (anti-enumeration).
-    if user is not None:
+    # OAuth-only accounts have no password_hash → password login always fails.
+    if user is not None and user["password_hash"]:
         ok = verify_password(password, user["password_hash"])
     else:
         verify_password(password, DUMMY_PASSWORD_HASH)

@@ -6,6 +6,7 @@ import { MailCheck } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput, Field } from "@/components/ui/input";
+import { GoogleAuthSection } from "@/components/auth/google-button";
 import { signupSchema, validate } from "@/lib/validation";
 import type { ApiError } from "@/lib/auth/types";
 
@@ -176,6 +177,8 @@ export default function SignupPage() {
           By continuing you agree to our Terms and acknowledge our Privacy Policy.
         </p>
       </form>
+
+      <GoogleAuthSection />
 
       <p className="mt-5 text-center text-sm text-fg-muted">
         Already have an account?{" "}

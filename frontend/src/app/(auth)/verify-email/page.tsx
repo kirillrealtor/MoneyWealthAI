@@ -2,15 +2,18 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth/context";
 
 type State = "verifying" | "success" | "error";
 
 function VerifyInner() {
   const token = useSearchParams().get("token");
+  const { completeSession } = useAuth();
+  const router = useRouter();
   // Derive the no-token case at init so we never setState synchronously in the effect.
   const [state, setState] = useState<State>(token ? "verifying" : "error");
 
@@ -19,13 +22,22 @@ function VerifyInner() {
     let cancelled = false;
     (async () => {
       const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+      const data = (await res.json().catch(() => ({}))) as { access_token?: string };
       if (cancelled) return;
-      setState(res.ok ? "success" : "error");
+      if (res.ok && data.access_token) {
+        // Verified — establish the session and drop them straight on the dashboard.
+        await completeSession(data.access_token);
+        if (cancelled) return;
+        setState("success");
+        router.replace("/app");
+      } else {
+        setState("error");
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, completeSession, router]);
 
   if (state === "verifying") {
     return (
@@ -43,9 +55,9 @@ function VerifyInner() {
           <CheckCircle2 className="size-6 text-positive" />
         </div>
         <h1 className="mt-5 text-2xl font-medium tracking-tight">Email verified</h1>
-        <p className="mt-2 text-sm text-fg-muted">Your account is active. You can log in now.</p>
-        <Link href="/login" className="mt-6 block">
-          <Button className="w-full">Continue to log in</Button>
+        <p className="mt-2 text-sm text-fg-muted">You&apos;re in — taking you to your dashboard…</p>
+        <Link href="/app" className="mt-6 block">
+          <Button className="w-full">Go to dashboard</Button>
         </Link>
       </Panel>
     );

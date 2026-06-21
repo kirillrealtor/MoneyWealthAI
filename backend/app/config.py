@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     admin_jwt_audience: str = "financial-advisor-admin"
     admin_access_token_ttl: int = 1800  # 30 min — admin sessions are short-lived
 
+    # ---- Social login (Google "Continue with Google") ----
+    # Public OAuth client id (…apps.googleusercontent.com). Leave unset to keep
+    # the Google sign-in endpoint returning a clean "not configured" error.
+    google_client_id: str | None = None
+
     app_base_url: str = "http://localhost:3000"
     cookie_domain: str = "localhost"
     default_tenant_id: str = "00000000-0000-0000-0000-000000000001"

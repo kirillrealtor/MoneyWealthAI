@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import { headers } from "next/headers";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Sora } from "next/font/google";
 import "./globals.css";
 import { AuroraBackdrop } from "@/components/visual/aurora-backdrop";
 import { Providers } from "@/components/providers";
@@ -9,6 +9,8 @@ import { THEME_SCRIPT } from "@/lib/theme/script";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// Premium display face for headings (pairs with Geist body + Instrument Serif italics).
+const heading = Sora({ variable: "--font-sora", weight: ["600", "700"], subsets: ["latin"] });
 const display = Instrument_Serif({
   variable: "--font-display",
   weight: "400",
@@ -60,7 +62,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${heading.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         {/* Sets the theme class on <html> before first paint — no flash. */}

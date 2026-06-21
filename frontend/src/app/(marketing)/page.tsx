@@ -45,9 +45,9 @@ export default function Landing() {
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-brand">
             Your money, at a glance
           </span>
-          <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">
+          <h2 className="mt-3 font-heading text-[2rem] font-semibold tracking-[-0.02em] sm:text-4xl">
             Not a dashboard dump — each surface answers a{" "}
-            <span className="font-display italic text-aurora">real</span> question.
+            <span className="font-display font-normal italic text-aurora">real</span> question.
           </h2>
         </Reveal>
         <Reveal delay={0.1}>
@@ -70,7 +70,7 @@ function Hero() {
       <HeroBackdrop />
 
       <div className="relative mx-auto max-w-6xl px-5 pt-40 text-center">
-        <h1 className="mx-auto max-w-4xl text-balance text-6xl font-semibold leading-[0.95] tracking-[-0.025em] animate-[rise_0.7s_ease-out_0.05s_both] [text-shadow:0_2px_60px_rgba(124,58,237,0.28)] sm:text-[5.75rem]">
+        <h1 className="mx-auto max-w-4xl text-balance font-heading text-6xl font-bold leading-[0.94] tracking-[-0.03em] animate-[rise_0.7s_ease-out_0.05s_both] [text-shadow:0_2px_60px_rgba(124,58,237,0.28)] sm:text-[5.75rem]">
           <span className="font-display text-[0.78em] font-normal italic text-white/45">Finally</span>{" "}
           <span className="text-metallic">understand</span>
           <br />
@@ -157,13 +157,10 @@ function ProductShowcase() {
       <Badge tone="brand" className="mb-6">
         <Sparkles className="size-3.5" /> One calm app
       </Badge>
-      <h2 className="text-balance text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+      <h2 className="text-balance font-heading text-4xl font-semibold tracking-[-0.02em] text-fg sm:text-5xl">
         Where your money finally{" "}
         <span className="font-display italic font-normal text-aurora">makes sense.</span>
       </h2>
-      <p className="mx-auto mt-4 max-w-xl text-fg-muted">
-        Every surface answers a real question — and the advisor ties them together.
-      </p>
     </section>
   );
 }
@@ -178,9 +175,9 @@ function AdvisorShowcase() {
           <Badge tone="brand" className="w-fit">
             <Sparkles className="size-3.5" /> The advisor
           </Badge>
-          <h3 className="text-2xl font-medium leading-snug tracking-tight sm:text-3xl">
+          <h3 className="font-heading text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-3xl">
             Ask anything. Get answers{" "}
-            <span className="font-display italic text-aurora">tied to your data.</span>
+            <span className="font-display font-normal italic text-aurora">tied to your data.</span>
           </h3>
           <p className="text-fg-muted">
             Every figure is traceable. The advisor calls your real accounts,

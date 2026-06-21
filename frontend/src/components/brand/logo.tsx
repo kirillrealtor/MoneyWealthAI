@@ -15,8 +15,8 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <Mark className="h-7 w-7" />
       {showWordmark && (
-        <span className="font-display text-[1.55rem] leading-none tracking-tight text-fg">
-          MoneyWealth AI
+        <span className="font-heading text-[1.35rem] font-semibold leading-none tracking-[-0.02em] text-fg">
+          MoneyWealth<span className="text-brand"> AI</span>
         </span>
       )}
     </span>

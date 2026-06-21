@@ -58,7 +58,7 @@ export function HowItWorks() {
           <Panel key={title} className="relative">
             <span className="font-display text-5xl italic text-aurora">{i + 1}</span>
             <Icon className="mt-4 size-6 text-brand" />
-            <h3 className="mt-3 text-lg font-medium">{title}</h3>
+            <h3 className="mt-3 font-heading text-lg font-semibold tracking-[-0.01em]">{title}</h3>
             <p className="mt-1.5 text-sm text-fg-muted">{body}</p>
           </Panel>
         ))}
@@ -86,7 +86,7 @@ export function FeatureGrid() {
             <div className="flex size-11 items-center justify-center rounded-xl bg-hover ring-1 ring-line transition-colors group-hover:ring-brand/40">
               <Icon className={tone === "brand" ? "size-5 text-brand" : "size-5 text-fg-muted"} />
             </div>
-            <h3 className="mt-4 text-base font-medium">{title}</h3>
+            <h3 className="mt-4 font-heading text-base font-semibold tracking-[-0.01em]">{title}</h3>
             <p className="mt-1.5 text-sm text-fg-muted">{body}</p>
           </Panel>
         ))}
@@ -151,9 +151,9 @@ export function FinalCTA() {
           <Badge tone="brand" className="mb-6">
             <ShieldCheck className="size-3.5" /> Bank-level security, by design
           </Badge>
-          <h2 className="mx-auto max-w-2xl text-balance text-4xl font-medium tracking-tight sm:text-5xl">
+          <h2 className="mx-auto max-w-2xl text-balance font-heading text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">
             Understand your money in{" "}
-            <span className="font-display italic text-aurora">minutes</span>, not spreadsheets.
+            <span className="font-display font-normal italic text-aurora">minutes</span>, not spreadsheets.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-fg-muted">
             Encrypted, read-only, and grounded in your real data. Free to start — no card required.
@@ -183,9 +183,9 @@ function Heading({
 }) {
   return (
     <div className="text-center">
-      <span className="text-xs font-medium uppercase tracking-[0.2em] text-brand">{kicker}</span>
-      <h2 className="mt-3 text-balance text-3xl font-medium tracking-tight sm:text-4xl">
-        {title} <span className="font-display italic text-aurora">{em}</span> {rest}
+      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">{kicker}</span>
+      <h2 className="mt-3 text-balance font-heading text-[2rem] font-semibold tracking-[-0.02em] sm:text-[2.6rem]">
+        {title} <span className="font-display font-normal italic text-aurora">{em}</span> {rest}
       </h2>
     </div>
   );

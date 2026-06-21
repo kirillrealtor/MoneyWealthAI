@@ -89,7 +89,9 @@ async def _send_sendgrid(mail: Mail) -> None:
 
 
 def build_verification_email(to: str, token: str) -> Mail:
-    url = f"{settings.app_base_url}/api/v1/auth/verify-email?token={quote(token, safe='')}"
+    # Link points at the FRONTEND verify-email page (web_app_url), which posts the
+    # token back via the BFF and shows a proper "verified" screen — not raw API JSON.
+    url = f"{settings.web_app_url}/verify-email?token={quote(token, safe='')}"
     return Mail(
         to=to,
         subject="Verify your email",

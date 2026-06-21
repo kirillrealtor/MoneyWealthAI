@@ -105,7 +105,8 @@ async def test_sendgrid_rejection_raises(monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_verification_email_contains_link_and_urlencodes_token() -> None:
     mail = build_verification_email("a@example.com", "tok/with+specials")
-    assert "/api/v1/auth/verify-email?token=tok%2Fwith%2Bspecials" in mail.text
+    # Links to the frontend verify-email page (web_app_url), token url-encoded.
+    assert "/verify-email?token=tok%2Fwith%2Bspecials" in mail.text
     assert mail.to == "a@example.com"
 
 

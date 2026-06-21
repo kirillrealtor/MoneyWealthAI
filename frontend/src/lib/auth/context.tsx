@@ -16,6 +16,10 @@ type AuthContextValue = {
   user: User | null;
   status: AuthStatus;
   login: (email: string, password: string, captchaToken?: string) => Promise<LoginResult>;
+  /** Continue with Google — exchanges a Google ID token for an app session. */
+  signInWithGoogle: (idToken: string) => Promise<LoginResult>;
+  /** Establish the in-memory session from an access token (verify-email auto-login). */
+  completeSession: (accessToken: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   /** Authenticated fetch to the BFF proxy; injects the in-memory access token. */
@@ -76,6 +80,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [tryRefresh, fetchMe]);
 
+  // Set the in-memory access token and hydrate the user — shared by password
+  // login, Google sign-in, and verify-email auto-login.
+  const finishAuth = useCallback(
+    async (token: string): Promise<boolean> => {
+      accessToken.current = token;
+      const me = await fetchMe();
+      setUser(me);
+      setStatus(me ? "authenticated" : "unauthenticated");
+      return !!me;
+    },
+    [fetchMe],
+  );
+
   const login = useCallback<AuthContextValue["login"]>(
     async (email, password, captchaToken) => {
       const res = await fetch("/api/auth/login", {
@@ -85,13 +102,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, error: data as ApiError };
-      accessToken.current = (data as { access_token: string }).access_token;
-      const me = await fetchMe();
-      setUser(me);
-      setStatus(me ? "authenticated" : "unauthenticated");
+      await finishAuth((data as { access_token: string }).access_token);
       return { ok: true };
     },
-    [fetchMe],
+    [finishAuth],
+  );
+
+  const signInWithGoogle = useCallback<AuthContextValue["signInWithGoogle"]>(
+    async (idToken) => {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data as ApiError };
+      await finishAuth((data as { access_token: string }).access_token);
+      return { ok: true };
+    },
+    [finishAuth],
+  );
+
+  const completeSession = useCallback<AuthContextValue["completeSession"]>(
+    (token) => finishAuth(token),
+    [finishAuth],
   );
 
   const logout = useCallback(async () => {
@@ -123,7 +157,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, status, login, logout, refreshUser, authedFetch }}>
+    <AuthContext.Provider
+      value={{ user, status, login, signInWithGoogle, completeSession, logout, refreshUser, authedFetch }}
+    >
       {children}
     </AuthContext.Provider>
   );

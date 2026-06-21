@@ -11,6 +11,7 @@ from app.errors import ApiError
 from . import service
 from .schemas import (
     ForgotPasswordRequest,
+    GoogleAuthRequest,
     LoginRequest,
     MeResponse,
     MessageResponse,
@@ -61,10 +62,23 @@ async def signup(body: SignupRequest, request: Request, tenant_id: str = Depends
     return SignupResponse(user_id=user_id)
 
 
-@router.get("/verify-email", response_model=MessageResponse)
-async def verify_email(token: str) -> MessageResponse:
-    await service.verify_email(token)
-    return MessageResponse(message="Email verified. You can now log in.")
+@router.get("/verify-email", response_model=TokenResponse,
+            dependencies=[Depends(rate_limit("auth_verify", 30))])
+async def verify_email(token: str, request: Request, response: Response) -> TokenResponse:
+    # Verifying also logs the user in (clicking the emailed link proves inbox
+    # control) — the frontend then drops them straight on the dashboard.
+    pair = await service.verify_email(token, _ctx(request))
+    _set_refresh_cookie(response, pair.refresh_token)
+    return TokenResponse(access_token=pair.access_token, user_id=pair.user_id)
+
+
+@router.post("/google", response_model=TokenResponse,
+             dependencies=[Depends(rate_limit("auth_google", 20))])
+async def google(body: GoogleAuthRequest, request: Request, response: Response,
+                 tenant_id: str = Depends(resolve_tenant)) -> TokenResponse:
+    pair = await service.google_auth(id_token=body.id_token, tenant_id=tenant_id, ctx=_ctx(request))
+    _set_refresh_cookie(response, pair.refresh_token)
+    return TokenResponse(access_token=pair.access_token, user_id=pair.user_id)
 
 
 @router.post("/resend-verification", response_model=MessageResponse,

@@ -36,16 +36,18 @@ def _ip(request: Request) -> str | None:
 
 @router.post("/link-token", response_model=LinkTokenResponse,
              dependencies=[Depends(rate_limit("plaid_link", 30))])
-async def link_token(user: CurrentUser = Depends(require_verified)) -> LinkTokenResponse:
-    result = await service.create_link_token(user.user_id)
+async def link_token(environment: str = "sandbox", user: CurrentUser = Depends(require_verified)) -> LinkTokenResponse:
+    result = await service.create_link_token(user.user_id, environment)
     return LinkTokenResponse(**result)
 
 
 @router.post("/exchange", response_model=ExchangeResponse,
              dependencies=[Depends(rate_limit("plaid_exchange", 30))])
-async def exchange(body: ExchangeRequest, request: Request,
+async def exchange(body: ExchangeRequest, request: Request, environment: str = "sandbox",
                    user: CurrentUser = Depends(require_verified)) -> ExchangeResponse:
-    result = await service.exchange_public_token(user.user_id, user.tenant_id, body.public_token, _ip(request))
+    result = await service.exchange_public_token(
+        user.user_id, user.tenant_id, body.public_token, _ip(request), environment
+    )
     return ExchangeResponse(**result)
 
 

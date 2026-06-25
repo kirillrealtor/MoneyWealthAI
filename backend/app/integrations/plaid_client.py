@@ -25,12 +25,26 @@ class PlaidNotConfigured(RuntimeError):
 
 
 class PlaidClient:
-    def __init__(self) -> None:
-        if not settings.plaid_configured:
-            raise PlaidNotConfigured("Plaid client_id/secret/enc_key not configured")
-        self._base = settings.plaid_base_url
+    def __init__(self, env: str) -> None:
         self._client_id = settings.plaid_client_id
-        self._secret = settings.plaid_secret
+        if not self._client_id or not settings.plaid_enc_key:
+            raise PlaidNotConfigured("Plaid client_id or enc_key not configured")
+        
+        self._env = env
+        if env == "sandbox":
+            self._base = "https://sandbox.plaid.com"
+            self._secret = settings.plaid_sandbox_secret
+        elif env == "development":
+            self._base = "https://development.plaid.com"
+            self._secret = settings.plaid_development_secret
+        elif env == "production":
+            self._base = "https://production.plaid.com"
+            self._secret = settings.plaid_development_secret
+        else:
+            raise ValueError(f"Invalid Plaid env: {env}")
+            
+        if not self._secret:
+            raise PlaidNotConfigured(f"Plaid secret for {env} not configured")
 
     async def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         body = {"client_id": self._client_id, "secret": self._secret, **payload}
@@ -117,11 +131,12 @@ def _safe_error(resp: httpx.Response) -> dict[str, Any]:
     }
 
 
-def get_plaid() -> PlaidClient:
+def get_plaid(env: str | None = None) -> PlaidClient:
     """Construct a client or raise a generic error if Plaid isn't configured.
     The 'not configured' detail is logged, not returned (don't disclose env state)."""
+    target_env = env or settings.plaid_env
     try:
-        return PlaidClient()
+        return PlaidClient(target_env)
     except PlaidNotConfigured as err:
-        logger.error("plaid not configured", service="plaid")
+        logger.error("plaid not configured", service="plaid", env=target_env)
         raise ApiError("PLAID_ERROR") from err

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any
 
 import jwt
@@ -110,7 +110,7 @@ async def _dispatch_verification(user_id: str, email: str, tenant_id: str) -> No
         user_id,
         tenant_id,
         sha256(raw),
-        datetime.now(UTC) + VERIFY_TTL,
+        datetime.now(timezone.utc) + VERIFY_TTL,
     )
     # A mail-provider blip must not fail signup (the account exists; the user
     # recovers via POST /auth/resend-verification). Log loudly and move on.
@@ -304,7 +304,7 @@ async def request_password_reset(*, email: str, tenant_id: str | None, captcha_t
     await db.execute(
         """INSERT INTO email_verification_tokens (user_id, tenant_id, token_hash, purpose, expires_at)
            VALUES ($1, $2, $3, 'reset_password', $4)""",
-        user_id, tenant, sha256(raw), datetime.now(UTC) + RESET_TTL,
+        user_id, tenant, sha256(raw), datetime.now(timezone.utc) + RESET_TTL,
     )
     try:
         await send_mail(build_reset_email(email_norm, raw))

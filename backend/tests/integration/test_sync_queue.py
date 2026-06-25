@@ -74,7 +74,7 @@ async def test_concurrent_enqueue_coalesces_to_one_job(client: httpx.AsyncClient
 
 async def test_claim_and_process_completes_job(client: httpx.AsyncClient, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     item_id, user_id, account_pid = await _seed_item(client)
-    monkeypatch.setattr(syncmod, "get_plaid", lambda: _make_fake_plaid(account_pid))
+    monkeypatch.setattr(syncmod, "get_plaid", lambda *a, **kw: _make_fake_plaid(account_pid))
     await worker.enqueue_sync(item_id, TENANT, user_id)
 
     claimed = await worker._claim(10)

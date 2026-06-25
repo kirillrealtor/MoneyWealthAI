@@ -30,7 +30,8 @@ export function usePlaidItems() {
 export function useCreateLinkToken() {
   const api = useApiClient();
   return useMutation({
-    mutationFn: () => api.post<{ link_token: string; expiration?: string }>("/plaid/link-token", {}),
+    mutationFn: (environment: string) =>
+      api.post<{ link_token: string; expiration?: string }>(`/plaid/link-token?environment=${environment}`, {}),
   });
 }
 
@@ -38,9 +39,9 @@ export function useExchangeToken() {
   const api = useApiClient();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (public_token: string) =>
+    mutationFn: ({ public_token, environment }: { public_token: string; environment: string }) =>
       api.post<{ item_id: string; institution_name: string | null; accounts_linked: number }>(
-        "/plaid/exchange",
+        `/plaid/exchange?environment=${environment}`,
         { public_token },
       ),
     onSuccess: () => {

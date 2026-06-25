@@ -6,7 +6,7 @@ the event loop.
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, cast
 
 import stripe
@@ -117,7 +117,7 @@ async def _sync_subscription(sub: dict[str, Any]) -> None:
 
     status = str(sub.get("status"))
     period_end = sub.get("current_period_end")
-    cpe = datetime.fromtimestamp(int(period_end), UTC) if period_end else None
+    cpe = datetime.fromtimestamp(int(period_end), timezone.utc) if period_end else None
     new_tier = tier if status in _ACTIVE else "free"
 
     async with db.with_tenant(tenant_id, user_id) as conn:

@@ -35,17 +35,17 @@ _NEG_SENTINEL = "__none__"
 _KID_RE = re.compile(r"^[A-Za-z0-9_-]{1,100}$")
 
 
-async def _get_verification_key(kid: str) -> dict[str, Any] | None:
+async def _get_verification_key(kid: str, env: str) -> dict[str, Any] | None:
     if not _KID_RE.match(kid):
         return None
-    cache_key = f"plaid:jwk:{kid}"
+    cache_key = f"plaid:jwk:{env}:{kid}"
     cached = await redis_client.get(cache_key)
     if cached == _NEG_SENTINEL:
         return None
     if cached:
         return json.loads(cached)  # type: ignore[no-any-return]
     try:
-        resp = await get_plaid().webhook_verification_key_get(kid)
+        resp = await get_plaid(env).webhook_verification_key_get(kid)
     except ApiError:
         # Unknown kid / Plaid error: negative-cache so repeats don't re-hit Plaid.
         await redis_client.set(cache_key, _NEG_SENTINEL, ex=_NEG_CACHE_TTL_S)
@@ -68,29 +68,36 @@ async def verify_webhook(raw_body: bytes, verification_header: str | None) -> bo
     if header.get("alg") != "ES256" or "kid" not in header:
         return False
 
-    jwk = await _get_verification_key(header["kid"])
-    if not jwk:
-        return False
+    kid = header["kid"]
+    # Iterate through possible environments to find one that validates the signature
+    for env in ["sandbox", "development"]:
+        try:
+            jwk = await _get_verification_key(kid, env)
+            if not jwk:
+                continue
 
-    try:
-        # from_jwk returns a public key for a public JWK; jwt.decode accepts it.
-        public_key = ECAlgorithm.from_jwk(json.dumps(jwk))
-        claims = jwt.decode(verification_header, public_key, algorithms=["ES256"])  # type: ignore[arg-type]
-    except jwt.PyJWTError as err:
-        logger.warning("plaid webhook jwt invalid", service="plaid", error_message=str(err))
-        return False
+            # from_jwk returns a public key for a public JWK; jwt.decode accepts it.
+            public_key = ECAlgorithm.from_jwk(json.dumps(jwk))
+            claims = jwt.decode(verification_header, public_key, algorithms=["ES256"])  # type: ignore[arg-type]
+            
+            iat = claims.get("iat", 0)
+            if abs(time.time() - iat) > _MAX_AGE_S:
+                logger.warning("plaid webhook stale (replay?)", service="plaid", env=env)
+                return False
 
-    iat = claims.get("iat", 0)
-    if abs(time.time() - iat) > _MAX_AGE_S:
-        logger.warning("plaid webhook stale (replay?)", service="plaid")
-        return False
+            body_hash = hashlib.sha256(raw_body).hexdigest()
+            claimed = claims.get("request_body_sha256", "")
+            if not hmac.compare_digest(body_hash, claimed):
+                logger.warning("plaid webhook body hash mismatch", service="plaid", env=env)
+                return False
 
-    body_hash = hashlib.sha256(raw_body).hexdigest()
-    claimed = claims.get("request_body_sha256", "")
-    if not hmac.compare_digest(body_hash, claimed):
-        logger.warning("plaid webhook body hash mismatch", service="plaid")
-        return False
-    return True
+            return True
+        except jwt.PyJWTError:
+            continue
+        except ApiError:
+            continue
+
+    return False
 
 
 async def dispatch_webhook(payload: dict[str, Any]) -> None:

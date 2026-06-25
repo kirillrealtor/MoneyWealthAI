@@ -128,7 +128,7 @@ async def sync_item_core(item_id: str, tenant_id: str, user_id: str) -> int:
     try:
         async with db.with_tenant(tenant_id) as conn:
             item = await conn.fetchrow(
-                "SELECT access_token_enc, cursor FROM plaid_items WHERE item_id = $1", item_id
+                "SELECT access_token_enc, cursor, environment FROM plaid_items WHERE item_id = $1", item_id
             )
             if not item:
                 return 0
@@ -139,7 +139,7 @@ async def sync_item_core(item_id: str, tenant_id: str, user_id: str) -> int:
         acct_map = {a["plaid_account_id"]: a["account_id"] for a in accounts}
         token = decrypt(bytes(item["access_token_enc"]), aad=user_id)
         cursor = item["cursor"]
-        plaid = get_plaid()
+        plaid = get_plaid(item["environment"])
 
         total_added = 0
         has_more = True

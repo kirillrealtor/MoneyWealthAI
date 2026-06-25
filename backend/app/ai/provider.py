@@ -151,24 +151,52 @@ class FallbackProvider:
 
 def get_provider() -> AdvisorProvider:
     """Build the provider chain (with auto-fallback), or a clean 503 if none is
-    configured. 'auto' prefers Claude and falls back to Groq."""
+    configured. 'auto' prefers Claude, then Gemini, then Grok, and falls back to Groq."""
     def _groq() -> AdvisorProvider:
         from .groq_provider import GroqProvider
         return GroqProvider()
+
+    def _gemini() -> AdvisorProvider:
+        from .gemini_provider import GeminiProvider
+        return GeminiProvider()
+
+    def _grok() -> AdvisorProvider:
+        from .grok_provider import GrokProvider
+        return GrokProvider()
+
+    def _mock() -> AdvisorProvider:
+        from .mock_provider import MockProvider
+        return MockProvider()  # type: ignore[return-value]
 
     choice = settings.advisor_provider
     providers: list[AdvisorProvider] = []
     if choice == "claude":
         if settings.anthropic_configured:
             providers = [ClaudeProvider()]
+    elif choice == "gemini":
+        if settings.gemini_configured:
+            providers = [_gemini()]
+    elif choice == "grok":
+        if settings.grok_configured:
+            providers = [_grok()]
     elif choice == "groq":
         if settings.groq_configured:
             providers = [_groq()]
-    else:  # auto — prefer Claude, fall back to Groq
+    elif choice == "mock":
+        providers = [_mock()]
+    else:  # auto — prefer Claude, then Gemini, then Grok, then Groq
         if settings.anthropic_configured:
             providers.append(ClaudeProvider())
+        if settings.gemini_configured:
+            providers.append(_gemini())
+        if settings.grok_configured:
+            providers.append(_grok())
         if settings.groq_configured:
             providers.append(_groq())
+        
+        # local mock fallback in development when no external AI keys are configured
+        if not providers and settings.env == "development":
+            providers.append(_mock())
 
     if not providers:
         raise ApiError("AI_UNAVAILABLE")

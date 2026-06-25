@@ -17,15 +17,17 @@ from .sync import to_money
 from .worker import enqueue_sync
 
 
-async def create_link_token(user_id: str) -> dict[str, Any]:
-    plaid = get_plaid()
+async def create_link_token(user_id: str, environment: str = "sandbox") -> dict[str, Any]:
+    plaid = get_plaid(environment)
     result = await plaid.create_link_token(user_id)
     await audit("plaid.link_token_created", user_id=user_id, resource="plaid_item")
     return {"link_token": result["link_token"], "expiration": result.get("expiration")}
 
 
-async def exchange_public_token(user_id: str, tenant_id: str, public_token: str, ip: str | None) -> dict[str, Any]:
-    plaid = get_plaid()
+async def exchange_public_token(
+    user_id: str, tenant_id: str, public_token: str, ip: str | None, environment: str = "sandbox"
+) -> dict[str, Any]:
+    plaid = get_plaid(environment)
 
     # 1. Network calls first (outside any DB transaction — keep transactions short).
     exchanged = await plaid.exchange_public_token(public_token)
@@ -44,18 +46,20 @@ async def exchange_public_token(user_id: str, tenant_id: str, public_token: str,
     async with db.with_tenant(tenant_id) as conn:
         item_id = await conn.fetchval(
             """INSERT INTO plaid_items
-                   (user_id, tenant_id, plaid_item_id, access_token_enc, item_status, institution_id)
-               VALUES ($1, $2, $3, $4, 'good', $5)
+                   (user_id, tenant_id, plaid_item_id, access_token_enc, item_status, institution_id, environment)
+               VALUES ($1, $2, $3, $4, 'good', $5, $6)
                ON CONFLICT (plaid_item_id) DO UPDATE
                    SET access_token_enc = EXCLUDED.access_token_enc,
                        item_status = 'good',
-                       institution_id = EXCLUDED.institution_id
+                       institution_id = EXCLUDED.institution_id,
+                       environment = EXCLUDED.environment
                RETURNING item_id""",
             user_id,
             tenant_id,
             plaid_item_id,
             token_enc,
             institution_id,
+            environment,
         )
         for acc in accounts:
             bal = acc.get("balances") or {}
@@ -143,7 +147,7 @@ async def list_items(user_id: str, tenant_id: str) -> list[dict[str, Any]]:
 async def disconnect_item(user_id: str, tenant_id: str, item_id: str, ip: str | None) -> None:
     async with db.with_tenant(tenant_id) as conn:
         row = await conn.fetchrow(
-            "SELECT access_token_enc FROM plaid_items WHERE item_id = $1 AND user_id = $2",
+            "SELECT access_token_enc, environment FROM plaid_items WHERE item_id = $1 AND user_id = $2",
             item_id,
             user_id,
         )
@@ -153,7 +157,7 @@ async def disconnect_item(user_id: str, tenant_id: str, item_id: str, ip: str | 
     # Best-effort revoke at Plaid, then delete locally (cascade) regardless.
     try:
         access_token = decrypt(bytes(row["access_token_enc"]), aad=user_id)
-        await get_plaid().item_remove(access_token)
+        await get_plaid(row["environment"]).item_remove(access_token)
     except ApiError as err:
         logger.warning("plaid item_remove failed; deleting locally anyway", error_message=str(err))
 

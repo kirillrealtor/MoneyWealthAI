@@ -135,7 +135,8 @@ class Settings(BaseSettings):
     # ---- Plaid (banking data) ----
     plaid_env: Literal["sandbox", "development", "production"] = "sandbox"
     plaid_client_id: str | None = None
-    plaid_secret: str | None = None
+    plaid_sandbox_secret: str | None = None
+    plaid_development_secret: str | None = None
     plaid_products: str = "transactions"  # comma-separated: transactions,auth,investments,liabilities
     plaid_country_codes: str = "US"
     plaid_redirect_uri: str | None = None
@@ -146,15 +147,19 @@ class Settings(BaseSettings):
     plaid_enc_key_version: int = 1
 
     # ---- AI advisor ----
-    # Provider selection: 'auto' prefers Claude, falls back to Groq if only Groq
-    # is configured. Set 'groq' to force the free/cheap path; 'claude' to force Claude.
-    advisor_provider: Literal["auto", "claude", "groq"] = "auto"
+    # Provider selection: 'auto' prefers Claude, then Gemini, then Grok, falls back to Groq.
+    # Set 'groq' to force the free/cheap path; 'claude' to force Claude.
+    advisor_provider: Literal["auto", "claude", "groq", "grok", "gemini", "mock"] = "auto"
     anthropic_api_key: str | None = None
     # Groq (OpenAI-compatible, free tier) — good for dev/load-testing the plumbing.
     # NOTE: open models are weaker at compliance framing; run evals before trusting
     # them as the production advisor brain (see docs/PHASE3_PENDING.md).
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
+    grok_api_key: str | None = None
+    grok_model: str = "grok-beta"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
     # Default to Opus 4.8 for financial-reasoning quality. At high volume, set
     # ADVISOR_MODEL=claude-sonnet-4-6 to cut cost (~$3/$15 vs $5/$25 per 1M).
     advisor_model: str = "claude-opus-4-8"
@@ -182,7 +187,11 @@ class Settings(BaseSettings):
 
     @property
     def plaid_configured(self) -> bool:
-        return bool(self.plaid_client_id and self.plaid_secret and self.plaid_enc_key)
+        return bool(
+            self.plaid_client_id
+            and (self.plaid_sandbox_secret or self.plaid_development_secret)
+            and self.plaid_enc_key
+        )
 
     @property
     def anthropic_configured(self) -> bool:
@@ -193,8 +202,21 @@ class Settings(BaseSettings):
         return bool(self.groq_api_key)
 
     @property
+    def grok_configured(self) -> bool:
+        return bool(self.grok_api_key)
+
+    @property
+    def gemini_configured(self) -> bool:
+        return bool(self.gemini_api_key)
+
+    @property
     def ai_configured(self) -> bool:
-        return self.anthropic_configured or self.groq_configured
+        return (
+            self.anthropic_configured
+            or self.groq_configured
+            or self.grok_configured
+            or self.gemini_configured
+        )
 
     def token_budget_for(self, tier: str) -> int:
         return {

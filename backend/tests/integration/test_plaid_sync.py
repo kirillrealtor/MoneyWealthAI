@@ -72,7 +72,7 @@ async def test_transaction_sync_is_idempotent(client: httpx.AsyncClient, monkeyp
             item_id, TENANT, account_pid,
         )
 
-    monkeypatch.setattr(syncmod, "get_plaid", lambda: _make_fake_plaid(account_pid))
+    monkeypatch.setattr(syncmod, "get_plaid", lambda *a, **kw: _make_fake_plaid(account_pid))
 
     n1 = await run_sync_for_item(str(item_id), TENANT, user_id)
     n2 = await run_sync_for_item(str(item_id), TENANT, user_id)

@@ -40,7 +40,7 @@ async def login_as_user(
         return await login_via_magic_link(client, email)
     r = await client.post("/api/v1/auth/signup", json={"email": email, "password": password})
     if r.status_code not in (201, 409):
-        assert False, r.text
+        raise AssertionError(r.text)
     return await login_via_password(client, email, password)
 
 

@@ -11,7 +11,7 @@ from app.crypto import hash_password
 from app.redis_client import close_redis
 
 
-async def main():
+async def main() -> None:
     email = "noor@gmail.com"
     pwd = "Qwerty@123"
     

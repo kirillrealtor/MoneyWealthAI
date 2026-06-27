@@ -19,20 +19,21 @@ import httpx
 from app.config import settings
 from app.logging_conf import logger
 
-# Dev/test outbox — last N sent mails retained for E2E token extraction (non-prod).
-_MAIL_OUTBOX: list["Mail"] = []
-_OUTBOX_MAX = 50
-
-
-class MailDeliveryError(Exception):
-    """Transport-level send failure. Callers decide whether it's fatal."""
-
 
 @dataclass
 class Mail:
     to: str
     subject: str
     text: str
+
+
+# Dev/test outbox — last N sent mails retained for E2E token extraction (non-prod).
+_MAIL_OUTBOX: list[Mail] = []
+_OUTBOX_MAX = 50
+
+
+class MailDeliveryError(Exception):
+    """Transport-level send failure. Callers decide whether it's fatal."""
 
 
 def peek_last_mail_to(email: str) -> Mail | None:

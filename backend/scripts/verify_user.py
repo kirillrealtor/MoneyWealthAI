@@ -10,7 +10,7 @@ from app import db
 from app.redis_client import close_redis
 
 
-async def main():
+async def main() -> None:
     await db.init_pool()
     try:
         await db.execute("UPDATE users SET is_verified = true WHERE email = 'noor@gmail.com'")

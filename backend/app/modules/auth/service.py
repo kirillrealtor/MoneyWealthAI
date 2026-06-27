@@ -227,7 +227,12 @@ async def request_magic_link(*, email: str, tenant_id: str | None, captcha_token
                 "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
             )
             await audit(
-                "user.signup", user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id, ip_address=ctx.ip
+                "user.signup",
+                user_id=user_id,
+                tenant_id=tenant,
+                resource="user",
+                resource_id=user_id,
+                ip_address=ctx.ip,
             )
         else:
             user_id = str(user["user_id"])

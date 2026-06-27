@@ -166,7 +166,7 @@ def get_provider() -> AdvisorProvider:
 
     def _mock() -> AdvisorProvider:
         from .mock_provider import MockProvider
-        return MockProvider()  # type: ignore[return-value]
+        return MockProvider()
 
     choice = settings.advisor_provider
     providers: list[AdvisorProvider] = []

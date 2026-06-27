@@ -1,12 +1,16 @@
-import pytest
 from app.ai.mock_provider import MockProvider
+
 
 async def test_mock_provider_routing_and_formatting() -> None:
     async def fake_execute_tool(name: str, args: dict) -> tuple[str, bool]:
         if name == "get_spending_summary":
             return '{"total_spend": 123.45, "top_categories": [{"category": "FOOD", "amount": 123.45}]}', False
         elif name == "get_account_balances":
-            return '{"accounts": [{"name": "Check", "balance": 500.0, "type": "depository"}], "total_assets": 500.0, "total_debt": 0.0, "net_worth": 500.0}', False
+            payload = (
+                '{"accounts": [{"name": "Check", "balance": 500.0, "type": "depository"}], '
+                '"total_assets": 500.0, "total_debt": 0.0, "net_worth": 500.0}'
+            )
+            return payload, False
         return "{}", False
 
     provider = MockProvider()

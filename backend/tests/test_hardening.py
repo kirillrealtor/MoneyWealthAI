@@ -32,6 +32,34 @@ def test_dev_still_allows_wildcard_hosts() -> None:
     assert s.allowed_hosts_list == ["*"]
 
 
+def test_health_probe_bypasses_trusted_host() -> None:
+    """ALB probes /health with Host = task IP; API routes stay protected."""
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Route
+    from starlette.testclient import TestClient
+
+    from app.middleware import HealthExemptTrustedHostMiddleware
+
+    async def api(_request):  # type: ignore[no-untyped-def]
+        return PlainTextResponse("api")
+
+    async def health(_request):  # type: ignore[no-untyped-def]
+        return PlainTextResponse("ok")
+
+    starlette_app = Starlette(
+        routes=[
+            Route("/health", health, methods=["GET"]),
+            Route("/api/v1/x", api, methods=["GET"]),
+        ]
+    )
+    wrapped = HealthExemptTrustedHostMiddleware(starlette_app, allowed_hosts=["api.example.com"])
+    client = TestClient(wrapped)
+    assert client.get("/health", headers={"Host": "10.0.1.99"}).status_code == 200
+    assert client.get("/api/v1/x", headers={"Host": "api.example.com"}).status_code == 200
+    assert client.get("/api/v1/x", headers={"Host": "evil.example.com"}).status_code == 400
+
+
 def test_to_money_avoids_float_error() -> None:
     assert to_money("12.50") == Decimal("12.50")
     assert to_money(99) == Decimal("99")

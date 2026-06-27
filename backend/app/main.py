@@ -6,13 +6,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import settings
 from app.db import close_pool, init_pool
 from app.errors import register_exception_handlers
 from app.logging_conf import configure_logging, logger
-from app.middleware import SecurityMiddleware, TracingMiddleware
+from app.middleware import HealthExemptTrustedHostMiddleware, SecurityMiddleware, TracingMiddleware
 from app.modules.admin.router import router as admin_router
 from app.modules.advisor.router import router as advisor_router
 from app.modules.auth.router import router as auth_router
@@ -66,7 +65,7 @@ def create_app() -> FastAPI:
     # NOTE: Starlette applies middleware in reverse add order, so the LAST added
     # runs FIRST. Order below means: Tracing (outermost) -> Security -> CORS ->
     # TrustedHost -> handler.
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
+    app.add_middleware(HealthExemptTrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,  # empty = no cross-origin

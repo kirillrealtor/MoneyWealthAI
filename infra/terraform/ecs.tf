@@ -13,9 +13,7 @@ locals {
     { name = "MAIL_FROM", value = "MoneyWealth AI <onboarding@resend.dev>" },
     { name = "MAGIC_LINK_TTL_MINUTES", value = "15" },
     { name = "ALLOWED_HOSTS", value = aws_lb.main.dns_name },
-    # TODO: flip to false once /health is exempted from the Host allowlist so
-    # ALB health checks (Host = task IP) pass without trusting any host.
-    { name = "TRUST_ANY_HOST", value = "true" },
+    { name = "TRUST_ANY_HOST", value = "false" },
   ]
 
   app_secrets = [

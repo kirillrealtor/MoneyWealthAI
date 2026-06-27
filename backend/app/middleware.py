@@ -7,11 +7,29 @@ import uuid
 from collections.abc import MutableMapping
 from typing import Any
 
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.config import settings
 from app.context import RequestContext, set_context
 from app.logging_conf import logger
+
+# ALB/ECS liveness probes hit these with Host = the task IP, not the public API name.
+_HEALTH_PROBE_PATHS = frozenset({"/health", "/health/ready"})
+
+
+class HealthExemptTrustedHostMiddleware:
+    """TrustedHostMiddleware that skips probe paths (ALB uses task IP as Host)."""
+
+    def __init__(self, app: ASGIApp, allowed_hosts: list[str]) -> None:
+        self.app = app
+        self._trusted = TrustedHostMiddleware(app, allowed_hosts=allowed_hosts)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope.get("path") in _HEALTH_PROBE_PATHS:
+            await self.app(scope, receive, send)
+            return
+        await self._trusted(scope, receive, send)
 
 
 class TracingMiddleware:

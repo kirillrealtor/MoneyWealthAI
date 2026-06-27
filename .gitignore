@@ -28,3 +28,6 @@ DEPLOY_SECRETS.local.md
 *.log
 .DS_Store
 *.txt.cookie
+
+.cursorignore
+abd/

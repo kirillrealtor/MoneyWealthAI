@@ -13,6 +13,7 @@ import pytest
 from app import db
 from app.config import settings
 from app.modules.budgets import service as budgets
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -60,9 +61,8 @@ async def test_users_scoped_to_tenant_with_context() -> None:
 
 async def _signup(c: httpx.AsyncClient) -> str:
     email = f"rls+{int(time.time()*1_000_000)}@example.com"
-    r = await c.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    assert r.status_code == 201, r.text
-    return r.json()["user_id"]
+    user_id, _ = await create_user_via_magic_link(c, email)
+    return user_id
 
 
 async def test_user_rls_backstop_hides_other_users_rows_in_same_tenant(client: httpx.AsyncClient) -> None:

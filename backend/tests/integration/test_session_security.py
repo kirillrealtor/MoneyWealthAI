@@ -12,6 +12,7 @@ from app.config import settings
 from app.errors import ApiError
 from app.modules.auth.service import AuthCtx, refresh
 from app.modules.auth.tokens import issue_refresh_token
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -19,8 +20,7 @@ pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reacha
 
 async def test_refresh_reuse_revokes_whole_family(client: httpx.AsyncClient) -> None:
     email = f"sess+{int(time.time()*1000)}@example.com"
-    r = await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    user_id = r.json()["user_id"]
+    user_id, _ = await create_user_via_magic_link(client, email)
     tenant = settings.default_tenant_id
     ctx = AuthCtx(ip="10.0.0.1", user_agent="pytest")
 

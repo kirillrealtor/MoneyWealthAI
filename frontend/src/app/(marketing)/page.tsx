@@ -86,7 +86,7 @@ function Hero() {
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3 animate-[rise_0.6s_ease-out_0.15s_both]">
-          <Link href="/signup">
+          <Link href="/login">
             <Button size="lg">
               Start free <ArrowRight className="size-4" />
             </Button>

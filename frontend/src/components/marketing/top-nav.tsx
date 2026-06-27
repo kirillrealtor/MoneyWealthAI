@@ -35,7 +35,7 @@ export function TopNav() {
               Log in
             </Button>
           </Link>
-          <Link href="/signup">
+          <Link href="/login">
             <Button size="sm">Get started</Button>
           </Link>
         </div>

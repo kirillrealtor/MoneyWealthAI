@@ -8,6 +8,10 @@ locals {
     { name = "PLAID_PRODUCTS", value = "transactions,liabilities,investments" },
     { name = "SYNC_WORKER_ENABLED", value = "true" },
     { name = "WEB_APP_URL", value = var.web_app_url },
+    { name = "AUTH_MODE", value = "password" },
+    { name = "MAIL_TRANSPORT", value = "resend" },
+    { name = "MAIL_FROM", value = "MoneyWealth AI <onboarding@resend.dev>" },
+    { name = "MAGIC_LINK_TTL_MINUTES", value = "15" },
     { name = "ALLOWED_HOSTS", value = aws_lb.main.dns_name },
     # TODO: flip to false once /health is exempted from the Host allowlist so
     # ALB health checks (Host = task IP) pass without trusting any host.

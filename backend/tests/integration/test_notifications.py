@@ -10,6 +10,7 @@ from app import db
 from app.alerts.engine import run_alerts_for_user
 from app.config import settings
 from app.encryption import encrypt
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -18,11 +19,8 @@ TENANT = settings.default_tenant_id
 
 async def _seed_overspent_budget(client: httpx.AsyncClient) -> tuple[str, dict[str, str]]:
     email = f"notif+{int(time.time()*1000)}@example.com"
-    user_id = (await client.post("/api/v1/auth/signup",
-                                 json={"email": email, "password": "SecurePass123!"})).json()["user_id"]
-    token = (await client.post("/api/v1/auth/login",
-                               json={"email": email, "password": "SecurePass123!"})).json()["access_token"]
-    h = {"authorization": f"Bearer {token}"}
+    user_id, access = await create_user_via_magic_link(client, email)
+    h = {"authorization": f"Bearer {access}"}
     # $100 dining budget...
     await client.post("/api/v1/budgets", headers=h, json={"category": "FOOD_AND_DRINK", "monthly_limit": "100"})
     # ...and $150 of dining spend this month.

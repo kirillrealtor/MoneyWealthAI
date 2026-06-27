@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput, Field } from "@/components/ui/input";
 import { GoogleAuthSection } from "@/components/auth/google-button";
+import { isMagicLinkAuth } from "@/lib/auth/mode";
 import { signupSchema, validate } from "@/lib/validation";
 import type { ApiError } from "@/lib/auth/types";
 
@@ -22,6 +24,7 @@ function strength(pw: string): { score: number; label: string } {
 }
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -29,6 +32,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [exists, setExists] = useState(false);
+
+  useEffect(() => {
+    if (isMagicLinkAuth()) router.replace("/login");
+  }, [router]);
 
   const pw = strength(password);
 
@@ -69,6 +76,8 @@ export default function SignupPage() {
       setError(err.message || "Something went wrong. Please try again.");
     }
   }
+
+  if (isMagicLinkAuth()) return null;
 
   if (done) {
     return (

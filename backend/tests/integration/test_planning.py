@@ -6,6 +6,7 @@ import time
 import httpx
 import pytest
 
+from tests.integration.auth_helpers import login_as_user
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -13,9 +14,8 @@ pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reacha
 
 async def _auth(client: httpx.AsyncClient) -> dict[str, str]:
     email = f"plan+{int(time.time()*1000)}@example.com"
-    await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    r = await client.post("/api/v1/auth/login", json={"email": email, "password": "SecurePass123!"})
-    return {"authorization": f"Bearer {r.json()['access_token']}"}
+    token = await login_as_user(client, email)
+    return {"authorization": f"Bearer {token}"}
 
 
 async def test_budget_crud(client: httpx.AsyncClient) -> None:

@@ -1,164 +1,223 @@
-# Email Setup for Deployment (MoneyWealth AI)
+# Email & auth env setup
 
-Transactional email (verification links, password resets) is currently
-**disabled in production** — `MAIL_TRANSPORT=console`, so the backend only
-*logs* the link instead of sending it. This is deliberate: the personal Gmail
-that was used as a temporary sender has been removed (see "What was removed"
-below). This doc is the checklist to turn real email back on the right way.
+Sign-in is controlled by **`AUTH_MODE`**: `password` (email + password) or
+`magic_link` (passwordless one-time link via email). The backend and frontend
+**must use the same mode**.
 
-> The app code needs **zero changes**. Email is fully config-driven
-> (`backend/app/modules/auth/mailer.py`). You only set env vars + one secret.
+Email delivery is config-driven (`backend/app/modules/auth/mailer.py`). Set env
+vars (and one SSM secret for production Resend) — no code changes when switching.
 
 ---
 
-## ⚠️ First: revoke the old credential
+## Env vars reference
 
-The Gmail **App Password** used earlier was shared in a chat, so treat it as
-compromised:
+| Variable | Where | Password mode | Magic-link mode |
+|---|---|---|---|
+| `AUTH_MODE` | backend | `password` | `magic_link` |
+| `NEXT_PUBLIC_AUTH_MODE` | frontend | `password` | `magic_link` |
+| `MAIL_TRANSPORT` | backend | `console` (dev) or `resend` / `smtp` / `sendgrid` (prod) | **`resend`** (or `console` for dev — links in logs) |
+| `RESEND_API_KEY` | backend | Optional (only if sending real mail) | **Required** when `MAIL_TRANSPORT=resend` |
+| `MAIL_FROM` | backend | Any valid sender for your transport | `MoneyWealth AI <onboarding@resend.dev>` (test) or `no-reply@yourdomain.com` (prod) |
+| `WEB_APP_URL` | backend | Frontend origin (verify + reset links) | Frontend origin (sign-in links) |
+| `MAGIC_LINK_TTL_MINUTES` | backend | Ignored | Link expiry (default `15`) |
 
-1. Go to <https://myaccount.google.com/apppasswords>
-2. Delete the app password named (e.g.) "MoneyWealth".
+Shared (both modes): `API_BASE_URL` (frontend, server-only), `NEXT_PUBLIC_APP_URL`
+(frontend public origin), JWT secrets, database, Redis.
 
-It no longer lives in AWS (the SSM secret was deleted), but revoking it at the
-source is the safe move. Separately, the **admin login account** still uses a
-personal email address; change it later if you want full separation (it's a DB
-row in `users`, unrelated to sending email).
+Check active mode at runtime: `GET /api/v1/auth/config` → `{ "auth_mode": "..." }`.
 
 ---
 
-## Choose a path
+## Password mode (`AUTH_MODE=password`)
 
-| | **Option A — Dedicated Gmail** | **Option B — Amazon SES** *(recommended)* |
+Signup, login, forgot password, and email verification. **Default for production**
+until a custom domain is verified in Resend (magic-link can then email any user).
+
+### Local dev
+
+**`backend/.env`**
+
+```env
+AUTH_MODE=password
+MAIL_TRANSPORT=console
+WEB_APP_URL=http://localhost:3100
+MAIL_FROM="MoneyWealth AI <no-reply@localhost>"
+```
+
+With `MAIL_TRANSPORT=console`, verification and reset links are **printed in the
+backend terminal** — no Resend account needed.
+
+**`frontend/.env.local`**
+
+```env
+API_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3100
+NEXT_PUBLIC_AUTH_MODE=password
+```
+
+Restart backend and frontend. Use `/signup` and `/login`.
+
+### Production (ECS + Vercel)
+
+**Backend (ECS task env)** — see [`backend/deploy/task-definition.json`](backend/deploy/task-definition.json):
+
+```env
+AUTH_MODE=password
+MAIL_TRANSPORT=resend
+MAIL_FROM=MoneyWealth AI <onboarding@resend.dev>
+WEB_APP_URL=https://moneywealth-omega.vercel.app
+```
+
+**Backend (SSM secret):** `RESEND_API_KEY` → `/moneywealth/RESEND_API_KEY`
+
+**Frontend (Vercel env):**
+
+```env
+NEXT_PUBLIC_AUTH_MODE=password
+API_BASE_URL=<your backend URL>
+NEXT_PUBLIC_APP_URL=https://moneywealth-omega.vercel.app
+```
+
+For real outbound mail to **any** address, verify a domain in Resend and set
+`MAIL_FROM` to e.g. `MoneyWealth AI <no-reply@yourdomain.com>`.
+
+---
+
+## Magic-link mode (`AUTH_MODE=magic_link`)
+
+Passwordless sign-in: user enters email → clicks one-time link → logged in.
+Uses **Resend** when `MAIL_TRANSPORT=resend`.
+
+### Local dev
+
+**`backend/.env`**
+
+```env
+AUTH_MODE=magic_link
+MAIL_TRANSPORT=resend
+RESEND_API_KEY=re_...
+MAIL_FROM=MoneyWealth AI <onboarding@resend.dev>
+WEB_APP_URL=http://localhost:3100
+MAGIC_LINK_TTL_MINUTES=15
+```
+
+For offline dev without Resend, use `MAIL_TRANSPORT=console` — the link appears
+in backend logs (same as password-mode verify emails).
+
+**`frontend/.env.local`**
+
+```env
+API_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3100
+NEXT_PUBLIC_AUTH_MODE=magic_link
+```
+
+Restart both servers. Sign in at `/login` (email only — no password field).
+
+### Production (ECS + Vercel)
+
+**Backend (ECS task env):**
+
+```env
+AUTH_MODE=magic_link
+MAIL_TRANSPORT=resend
+MAIL_FROM=MoneyWealth AI <no-reply@yourdomain.com>
+WEB_APP_URL=https://moneywealth-omega.vercel.app
+MAGIC_LINK_TTL_MINUTES=15
+```
+
+**Backend (SSM secret):** `RESEND_API_KEY` → `/moneywealth/RESEND_API_KEY`
+
+**Frontend (Vercel env):**
+
+```env
+NEXT_PUBLIC_AUTH_MODE=magic_link
+API_BASE_URL=<your backend URL>
+NEXT_PUBLIC_APP_URL=https://moneywealth-omega.vercel.app
+```
+
+---
+
+## Resend setup
+
+1. Create a free account at [resend.com](https://resend.com).
+2. **API Keys** → Create → **Sending access** → copy `re_...`.
+3. Put the key in `backend/.env` locally or SSM in production (see below).
+
+### Test sender (`onboarding@resend.dev`)
+
+No custom domain required.
+
+| | Test sender | Verified domain |
 |---|---|---|
-| Effort | ~5 min | ~30 min + domain |
-| Cost | Free | ~$0.10 / 1,000 emails |
-| Sending limit | ~500/day (free Gmail) | Millions (after prod access) |
-| Deliverability | OK-ish (no brand domain) | Strong (DKIM/SPF on your domain) |
-| From address | `something@gmail.com` | `no-reply@yourdomain.com` |
-| Good for | Demo / hackathon | Real product / scale |
+| `MAIL_FROM` | `MoneyWealth AI <onboarding@resend.dev>` | `no-reply@yourdomain.com` |
+| Who receives mail | **Only the email on your Resend account** | Any real address |
+| Good for | Local dev, demo, staging | Production |
 
-You already run everything on AWS, so **Option B (SES) is the real answer**.
-Option A is a fine stopgap for a demo.
+If the API returns “Check your email” but nothing arrives, sign in with the
+**same email as your Resend account**, or verify a domain.
+
+### Store API key in AWS (one-time)
+
+```powershell
+cd backend\scripts
+.\setup_resend_ssm.ps1 -ApiKey "re_YOUR_KEY"
+```
+
+Or manually:
+
+```powershell
+aws ssm put-parameter --name /moneywealth/RESEND_API_KEY --type SecureString `
+  --value "re_YOUR_KEY" --overwrite --region us-east-1
+```
+
+Redeploy the backend after changing ECS env or SSM.
+
+Confirm in CloudWatch logs: `email sent` with `transport=resend` (not
+`DEV email (not sent)`).
 
 ---
 
-## Option A — Dedicated Gmail (stopgap)
+## Switching modes
 
-1. Create a **new** Google account, e.g. `moneywealth.noreply@gmail.com`
-   (do **not** reuse a personal account).
-2. Turn on **2-Step Verification**: <https://myaccount.google.com/security>
-3. Create an **App Password**: <https://myaccount.google.com/apppasswords>
-   → copy the 16-char code (remove spaces).
-4. Apply the config — see **"Wiring it into AWS"** below, using:
-   - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_STARTTLS=true`
-   - `SMTP_USERNAME` = the new gmail, `MAIL_FROM` = the new gmail
-   - secret `SMTP_PASSWORD` = the 16-char app password
-
-## Option B — Amazon SES (recommended)
-
-1. **Verify a domain** (or a single from-address to start) in SES:
-   - Console → Amazon SES → **Identities** → Create identity → Domain
-   - Add the **DKIM** CNAME records SES gives you to your DNS, plus an SPF
-     record. Wait for "Verified".
-   - (Region: use `us-east-1` to match the rest of the stack.)
-2. **Request production access** (SES starts in *sandbox* — can only send to
-   verified addresses): SES → Account dashboard → "Request production access".
-   Approval is usually < 24h.
-3. **Create SMTP credentials**: SES → **SMTP settings** → Create SMTP
-   credentials (this makes an IAM user; you get an SMTP username + password —
-   these are NOT your AWS keys).
-4. Apply the config — see below, using SES SMTP values:
-   - `SMTP_HOST=email-smtp.us-east-1.amazonaws.com`, `SMTP_PORT=587`,
-     `SMTP_STARTTLS=true`
-   - `SMTP_USERNAME` = SES SMTP username, secret `SMTP_PASSWORD` = SES SMTP
-     password
-   - `MAIL_FROM=no-reply@yourdomain.com` (must be on the verified domain)
-
-> SES also has a native HTTP API, but our mailer speaks **SMTP**, so the SMTP
-> endpoint above is plug-and-play. (`MAIL_TRANSPORT` stays `smtp`.)
+1. Set `AUTH_MODE` on the backend and `NEXT_PUBLIC_AUTH_MODE` on the frontend to
+   the **same** value.
+2. Adjust `MAIL_TRANSPORT` / `RESEND_API_KEY` as in the tables above.
+3. Redeploy backend and frontend.
+4. Existing users keep their accounts; only the sign-in UI and active API routes
+   change (wrong-mode endpoints return 404).
 
 ---
 
-## Wiring it into AWS (same for both options)
+## Troubleshooting
 
-All commands use the AWS CLI (`python -m awscli ...`), region `us-east-1`,
-account `346133548342`. On Git Bash, prefix SSM commands with
-`MSYS_NO_PATHCONV=1` so the leading `/` in the parameter name isn't mangled.
-
-**1. Store the password as an encrypted secret:**
-```bash
-MSYS_NO_PATHCONV=1 python -m awscli ssm put-parameter \
-  --name "/moneywealth/SMTP_PASSWORD" --type SecureString \
-  --value "<APP_PASSWORD_OR_SES_SMTP_PASSWORD>" --overwrite --region us-east-1
-```
-
-**2. Register a new task definition revision** that adds the SMTP env +
-secret (start from the current rev, add these):
-- environment: `MAIL_TRANSPORT=smtp`, `SMTP_HOST`, `SMTP_PORT=587`,
-  `SMTP_STARTTLS=true`, `SMTP_USERNAME`, `MAIL_FROM`
-- secrets: `SMTP_PASSWORD` →
-  `arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/SMTP_PASSWORD`
-
-(The execution role `ecsTaskExecutionRole` already has `mwSsmRead`, so it can
-read the new secret — no IAM change needed.)
-
-**3. Roll the service:**
-```bash
-python -m awscli ecs update-service --cluster moneywealth \
-  --service moneywealth-backend --task-definition moneywealth-backend:<NEW_REV> \
-  --force-new-deployment --region us-east-1
-```
-
-**4. Repoint the frontend (the Fargate IP changes on every roll):**
-```bash
-# get the new task's public IP
-TASK=$(python -m awscli ecs list-tasks --cluster moneywealth \
-  --service-name moneywealth-backend --desired-status RUNNING \
-  --region us-east-1 --query "taskArns[0]" --output text)
-ENI=$(python -m awscli ecs describe-tasks --cluster moneywealth --tasks "$TASK" \
-  --region us-east-1 \
-  --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value | [0]" \
-  --output text)
-python -m awscli ec2 describe-network-interfaces --network-interface-ids "$ENI" \
-  --region us-east-1 --query "NetworkInterfaces[0].Association.PublicIp" --output text
-# then update Vercel + redeploy
-vercel env rm  API_BASE_URL production --yes  --token=$VERCEL_TOKEN --scope=24pwai0032-gifs-projects
-echo "http://<NEW_IP>:8080" | vercel env add API_BASE_URL production --token=$VERCEL_TOKEN --scope=24pwai0032-gifs-projects
-gh run rerun $(gh run list --workflow=deploy-frontend.yml --limit 1 --json databaseId -q '.[0].databaseId')
-```
-
-> This IP churn is the real long-term pain. The proper fix is a **stable
-> endpoint** (HTTPS domain in front of the backend). That removes the
-> repoint-on-every-deploy step entirely — see "Backend HTTPS" follow-up in
-> `DEPLOY_SECRETS.local.md`.
+| Symptom | Fix |
+|---|---|
+| Backend won't start: `MAIL_TRANSPORT=resend requires RESEND_API_KEY` | Set `RESEND_API_KEY` in `.env` or SSM |
+| Login shows password field but backend expects magic link (or vice versa) | Align `AUTH_MODE` and `NEXT_PUBLIC_AUTH_MODE` |
+| Password signup works but no verify email | `MAIL_TRANSPORT=console` — check backend logs; or configure Resend |
+| Magic-link “succeeds” but no email | Resend test sender — use your Resend account email, or verify a domain |
+| Link goes to wrong site | Set `WEB_APP_URL` to your public frontend URL |
+| `resend status 403/422` in logs | Invalid API key, or recipient not allowed on test sender |
+| Still see link in server logs only | `MAIL_TRANSPORT` is still `console` — set `resend` and redeploy |
 
 ---
 
-## Verify it works
+## Alternative mail transports
 
-```bash
-# 1. Sign up a test user (use a +alias so it lands in an inbox you control):
-curl -s -o /dev/null -w "%{http_code}\n" -X POST \
-  http://<NEW_IP>:8080/api/v1/auth/signup -H "content-type: application/json" \
-  -d '{"email":"you+mwtest@gmail.com","password":"TestPass123!","full_name":"Test"}'
+SMTP (Gmail / Amazon SES) and SendGrid remain supported:
 
-# 2. Confirm the send in logs (should show event "email sent", transport smtp):
-python -m awscli logs filter-log-events --log-group-name /ecs/moneywealth-backend \
-  --region us-east-1 --filter-pattern "email" --query "events[-1].message" --output text
-
-# 3. Check the inbox → click the verify link → it should log you straight into /app.
+```env
+MAIL_TRANSPORT=smtp
+SMTP_HOST=...
+SMTP_USERNAME=...
+SMTP_PASSWORD=...
 ```
 
-If the send fails, the log shows `email send failed` with the SMTP error
-(usually: wrong app password, 2FA not on, SES still in sandbox, or `MAIL_FROM`
-not on a verified domain).
+```env
+MAIL_TRANSPORT=sendgrid
+SENDGRID_API_KEY=...
+```
 
----
-
-## What was removed (2026-06-21)
-
-- SSM SecureString `/moneywealth/SMTP_PASSWORD` — **deleted**.
-- Task def **rev 5** (had `SMTP_USERNAME`/`MAIL_FROM` = personal gmail) —
-  **deregistered**. Live service is **rev 6**, `MAIL_TRANSPORT=console`.
-- File/memory references to the personal gmail SMTP config — scrubbed.
-- The personal Gmail App Password was never written to a file (SSM only).
+Resend is the recommended default for magic-link and production password-mode
+email (verify + reset).

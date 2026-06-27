@@ -9,6 +9,7 @@ import pytest
 from app import db
 from app.config import settings
 from app.encryption import encrypt
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -17,10 +18,8 @@ TENANT = settings.default_tenant_id
 
 async def _seed(client: httpx.AsyncClient) -> dict[str, str]:
     email = f"dash+{int(time.time()*1000)}@example.com"
-    r = await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    user_id = r.json()["user_id"]
-    token = (await client.post("/api/v1/auth/login",
-                               json={"email": email, "password": "SecurePass123!"})).json()["access_token"]
+    user_id, access = await create_user_via_magic_link(client, email)
+    token = access
     enc = encrypt("access-sandbox", aad=user_id)
     async with db.with_tenant(TENANT) as conn:
         item_id = await conn.fetchval(

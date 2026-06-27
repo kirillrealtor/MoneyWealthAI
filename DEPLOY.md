@@ -69,7 +69,10 @@ DATABASE_URL="postgresql://app_user:...@ENDPOINT:5432/financial_advisor" \
    JWT_REFRESH_SECRET=<openssl rand -base64 48>
    WEB_APP_URL=https://<your-vercel-domain>
    COOKIE_DOMAIN=<your-vercel-domain>               # for the refresh cookie
-   MAIL_TRANSPORT=smtp                              # + SMTP_* to send real email
+   MAIL_TRANSPORT=resend
+   MAIL_FROM=MoneyWealth AI <onboarding@resend.dev>
+   RESEND_API_KEY=re_...                            # or inject via SSM (see DEVOPS_HANDOFF.md)
+   MAGIC_LINK_TTL_MINUTES=15
    GROQ_API_KEY=...                                 # (or ANTHROPIC_API_KEY) for the advisor
    PLAID_ENV=sandbox  PLAID_CLIENT_ID=...  PLAID_SECRET=...  PLAID_ENC_KEY=...
    PLAID_PRODUCTS=transactions,liabilities,investments

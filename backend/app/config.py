@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     admin_jwt_audience: str = "financial-advisor-admin"
     admin_access_token_ttl: int = 1800  # 30 min — admin sessions are short-lived
 
+    # password = email + password (+ optional verify/reset emails).
+    # magic_link = passwordless sign-in via emailed one-time link (Resend).
+    auth_mode: Literal["password", "magic_link"] = "password"
+
     # ---- Social login (Google "Continue with Google") ----
     # Public OAuth client id (…apps.googleusercontent.com). Leave unset to keep
     # the Google sign-in endpoint returning a clean "not configured" error.
@@ -63,6 +67,8 @@ class Settings(BaseSettings):
     # ---- Email ----
     # console = log instead of sending (dev). smtp = any SMTP provider (Gmail,
     # Amazon SES SMTP endpoint, Mailgun, ...). sendgrid = SendGrid HTTP API.
+    # resend = Resend HTTP API (passwordless magic-link emails).
+    magic_link_ttl_minutes: int = Field(default=15, ge=5, le=60)
     # ---- Billing (Stripe) ----
     # All server-only. Price IDs come from the Stripe dashboard (one per
     # plan x interval). Leave blank to keep billing endpoints returning a clean
@@ -76,7 +82,7 @@ class Settings(BaseSettings):
     # Where Stripe Checkout / the Customer Portal send the user back (frontend).
     web_app_url: str = "http://localhost:3100"
 
-    mail_transport: Literal["console", "smtp", "sendgrid"] = "console"
+    mail_transport: Literal["console", "smtp", "sendgrid", "resend"] = "console"
     mail_from: str = "no-reply@financialadvisor.local"
     smtp_host: str | None = None
     smtp_port: int = 587
@@ -84,6 +90,7 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_starttls: bool = True  # STARTTLS on port 587 (set False only for :25 relays)
     sendgrid_api_key: str | None = None
+    resend_api_key: str | None = None
 
     @model_validator(mode="after")
     def _check_prod_hardening(self) -> Settings:
@@ -107,6 +114,8 @@ class Settings(BaseSettings):
             raise ValueError("MAIL_TRANSPORT=smtp requires SMTP_HOST")
         if self.mail_transport == "sendgrid" and not self.sendgrid_api_key:
             raise ValueError("MAIL_TRANSPORT=sendgrid requires SENDGRID_API_KEY")
+        if self.mail_transport == "resend" and not self.resend_api_key:
+            raise ValueError("MAIL_TRANSPORT=resend requires RESEND_API_KEY")
         return self
 
     # Cloudflare Turnstile (bot/captcha). Disabled by default so local dev and

@@ -1,16 +1,17 @@
 """Pydantic request/response models for the auth API."""
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class SignupRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")  # reject unexpected fields
+    model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
     password: str = Field(min_length=8, max_length=200)
     full_name: str | None = Field(default=None, max_length=255)
-    # Cloudflare Turnstile token (required when captcha is enabled).
     captcha_token: str | None = None
 
 
@@ -24,14 +25,19 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str = Field(min_length=1, max_length=200)
-    # Required only as a step-up after repeated login failures.
+    captcha_token: str | None = None
+
+
+class MagicLinkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
     captcha_token: str | None = None
 
 
 class GoogleAuthRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    # Google Identity Services ID token (a signed JWT from the browser).
     id_token: str = Field(min_length=1, max_length=8192)
 
 
@@ -39,7 +45,6 @@ class ResendVerificationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
-    # Same captcha gate as signup — stops the endpoint being used to mail-bomb.
     captcha_token: str | None = None
 
 
@@ -64,6 +69,10 @@ class TokenResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class AuthConfigResponse(BaseModel):
+    auth_mode: Literal["password", "magic_link"]
 
 
 class MeResponse(BaseModel):

@@ -59,7 +59,7 @@ export default function AboutPage() {
       <section className="mx-auto max-w-3xl px-5 pb-24 text-center">
         <h2 className="text-3xl font-medium tracking-tight">Come see your money clearly.</h2>
         <div className="mt-6 flex justify-center">
-          <Link href="/signup">
+          <Link href="/login">
             <Button size="lg">Start free <ArrowRight className="size-4" /></Button>
           </Link>
         </div>

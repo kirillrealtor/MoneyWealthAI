@@ -56,7 +56,9 @@ After `apply`:
    ```bash
    aws ssm put-parameter --name /moneywealth/DATABASE_URL --type SecureString \
      --value 'postgresql://app_user:...@<rds_endpoint>/financial_advisor?sslmode=require' --overwrite
-   # ...repeat for the other 8 secret_names
+   aws ssm put-parameter --name /moneywealth/RESEND_API_KEY --type SecureString \
+     --value 're_...' --overwrite
+   # ...repeat for the other secret_names (see variables.tf)
    ```
 3. **Run migrations**: `cd backend && MIGRATION_DATABASE_URL=... python -m scripts.migrate`
 4. **First deploy**: push to `main` → the `deploy-backend` GitHub Action builds

@@ -14,6 +14,7 @@ from app import db
 from app.config import settings
 from app.encryption import encrypt
 from app.modules.plaid import worker
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 from tests.integration.test_plaid_sync import _make_fake_plaid
 
@@ -23,8 +24,7 @@ TENANT = settings.default_tenant_id
 
 async def _seed_item(client: httpx.AsyncClient) -> tuple[str, str, str]:
     email = f"queue+{int(time.time()*1_000_000)}@example.com"
-    r = await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    user_id = r.json()["user_id"]
+    user_id, _ = await create_user_via_magic_link(client, email)
     account_pid = f"acc_{user_id}"
     token_enc = encrypt("access-sandbox-q", aad=user_id)
     async with db.with_tenant(TENANT) as conn:

@@ -14,6 +14,7 @@ from app.ai.advisor import run_turn
 from app.ai.provider import AdvisorResult
 from app.config import settings
 from app.encryption import encrypt
+from tests.integration.auth_helpers import create_user_via_magic_link
 from tests.integration.conftest import _db_reachable
 
 pytestmark = pytest.mark.skipif(not _db_reachable(), reason="Postgres not reachable on localhost:5433")
@@ -41,8 +42,7 @@ class _FakeProvider:
 
 async def _seed_user_with_spending(client: httpx.AsyncClient, amount: str = "42.00") -> str:
     email = f"advisor+{int(time.time()*1000)}@example.com"
-    r = await client.post("/api/v1/auth/signup", json={"email": email, "password": "SecurePass123!"})
-    user_id = r.json()["user_id"]
+    user_id, _ = await create_user_via_magic_link(client, email)
     token_enc = encrypt("access-sandbox", aad=user_id)
     async with db.with_tenant(TENANT) as conn:
         item_id = await conn.fetchval(

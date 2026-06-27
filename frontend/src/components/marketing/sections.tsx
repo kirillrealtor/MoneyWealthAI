@@ -129,7 +129,7 @@ export function PricingTeaser() {
                 </li>
               ))}
             </ul>
-            <Link href="/signup" className="mt-6 block">
+            <Link href="/login" className="mt-6 block">
               <Button variant={p.highlight ? "primary" : "secondary"} className="w-full">
                 {p.cta}
               </Button>
@@ -159,7 +159,7 @@ export function FinalCTA() {
             Encrypted, read-only, and grounded in your real data. Free to start — no card required.
           </p>
           <div className="mt-8 flex justify-center">
-            <Link href="/signup">
+            <Link href="/login">
               <Button size="lg">Create your free account</Button>
             </Link>
           </div>

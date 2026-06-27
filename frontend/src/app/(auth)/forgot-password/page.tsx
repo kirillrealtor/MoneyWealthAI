@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/input";
+import { isMagicLinkAuth } from "@/lib/auth/mode";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  useEffect(() => {
+    if (isMagicLinkAuth()) router.replace("/login");
+  }, [router]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Anti-enumeration: backend always returns the same generic response.
     await fetch("/api/backend/auth/forgot-password", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -24,6 +30,8 @@ export default function ForgotPasswordPage() {
     setLoading(false);
     setSent(true);
   }
+
+  if (isMagicLinkAuth()) return null;
 
   if (sent) {
     return (
@@ -37,7 +45,9 @@ export default function ForgotPasswordPage() {
           reset your password. It expires in 1 hour.
         </p>
         <Link href="/login" className="mt-6 block">
-          <Button variant="secondary" className="w-full">Back to log in</Button>
+          <Button variant="secondary" className="w-full">
+            Back to log in
+          </Button>
         </Link>
       </Panel>
     );
@@ -49,12 +59,24 @@ export default function ForgotPasswordPage() {
       <p className="mt-1.5 text-sm text-fg-muted">Enter your email and we&apos;ll send you a reset link.</p>
       <form onSubmit={onSubmit} className="mt-7 space-y-4" noValidate>
         <Field label="Email" htmlFor="email">
-          <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
         </Field>
-        <Button type="submit" className="w-full" size="lg" loading={loading}>Send reset link</Button>
+        <Button type="submit" className="w-full" size="lg" loading={loading}>
+          Send reset link
+        </Button>
       </form>
       <p className="mt-6 text-center text-sm text-fg-muted">
-        <Link href="/login" className="font-medium text-brand hover:underline">Back to log in</Link>
+        <Link href="/login" className="font-medium text-brand hover:underline">
+          Back to log in
+        </Link>
       </p>
     </Panel>
   );

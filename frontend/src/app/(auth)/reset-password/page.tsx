@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { PasswordInput, Field } from "@/components/ui/input";
+import { isMagicLinkAuth } from "@/lib/auth/mode";
 
 function ResetForm() {
   const router = useRouter();
@@ -15,6 +16,10 @@ function ResetForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (isMagicLinkAuth()) router.replace("/login");
+  }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,9 +38,15 @@ function ResetForm() {
       setTimeout(() => router.push("/login"), 1500);
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data?.code === "VALIDATION_ERROR" ? "This reset link is invalid or expired." : "Something went wrong.");
+      setError(
+        data?.code === "VALIDATION_ERROR"
+          ? "This reset link is invalid or expired."
+          : "Something went wrong.",
+      );
     }
   }
+
+  if (isMagicLinkAuth()) return null;
 
   if (done) {
     return (
@@ -55,15 +66,31 @@ function ResetForm() {
       <p className="mt-1.5 text-sm text-fg-muted">For security, this signs out all your sessions.</p>
       <form onSubmit={onSubmit} className="mt-7 space-y-4" noValidate>
         {error && (
-          <div role="alert" className="rounded-[12px] border border-negative/30 bg-negative/10 px-3.5 py-2.5 text-sm text-negative">{error}</div>
+          <div
+            role="alert"
+            className="rounded-[12px] border border-negative/30 bg-negative/10 px-3.5 py-2.5 text-sm text-negative"
+          >
+            {error}
+          </div>
         )}
         <Field label="New password" htmlFor="password" hint="At least 8 characters.">
-          <PasswordInput id="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a strong password" />
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Create a strong password"
+          />
         </Field>
-        <Button type="submit" className="w-full" size="lg" loading={loading}>Update password</Button>
+        <Button type="submit" className="w-full" size="lg" loading={loading}>
+          Update password
+        </Button>
       </form>
       <p className="mt-6 text-center text-sm text-fg-muted">
-        <Link href="/login" className="font-medium text-brand hover:underline">Back to log in</Link>
+        <Link href="/login" className="font-medium text-brand hover:underline">
+          Back to log in
+        </Link>
       </p>
     </Panel>
   );

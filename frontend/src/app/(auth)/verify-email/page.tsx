@@ -70,11 +70,11 @@ function VerifyInner() {
       </div>
       <h1 className="mt-5 text-2xl font-medium tracking-tight">Link expired or invalid</h1>
       <p className="mt-2 text-sm text-fg-muted">
-        This verification link is no longer valid. Request a fresh one.
+        This sign-in link is no longer valid. Request a fresh one from the sign-in page.
       </p>
-      <Link href="/resend" className="mt-6 block">
+      <Link href="/login" className="mt-6 block">
         <Button variant="secondary" className="w-full">
-          Resend verification
+          Back to sign in
         </Button>
       </Link>
     </Panel>

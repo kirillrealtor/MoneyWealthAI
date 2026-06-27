@@ -81,7 +81,7 @@ export function PricingTable() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="mt-6 block">
+              <Link href="/login" className="mt-6 block">
                 <Button variant={p.highlight ? "primary" : "secondary"} className="w-full">{p.cta}</Button>
               </Link>
             </Panel>

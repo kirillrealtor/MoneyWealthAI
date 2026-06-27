@@ -1,6 +1,6 @@
-"""Mailer transport tests — console (dev), SMTP, SendGrid, and config guards.
+"""Mailer transport tests — console (dev), SMTP, SendGrid, Resend, and config guards.
 
-No network: SMTP is monkeypatched at aiosmtplib.send; SendGrid uses
+No network: SMTP is monkeypatched at aiosmtplib.send; SendGrid and Resend use
 httpx.MockTransport. Verifies the security property that real transports are
 attempted with the right envelope (From/To/Subject) and that failures surface
 as MailDeliveryError instead of leaking provider internals.
@@ -15,12 +15,11 @@ import pytest
 
 from app.config import settings
 from app.modules.auth import mailer
-from app.modules.auth.mailer import Mail, MailDeliveryError, build_verification_email, send_mail
+from app.modules.auth.mailer import Mail, MailDeliveryError, build_magic_link_email, send_mail
 
 
 async def test_console_transport_is_default_and_never_sends(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "mail_transport", "console")
-    # Would raise if any network transport were attempted.
     await send_mail(Mail(to="a@example.com", subject="s", text="b"))
 
 
@@ -40,12 +39,12 @@ async def test_smtp_transport_sends_correct_envelope(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(settings, "smtp_password", "pass")
     monkeypatch.setattr(aiosmtplib, "send", fake_send)
 
-    await send_mail(Mail(to="dest@example.com", subject="Verify your email", text="hello"))
+    await send_mail(Mail(to="dest@example.com", subject="Sign in to MoneyWealth AI", text="hello"))
 
     msg = sent["msg"]
     assert msg["From"] == settings.mail_from
     assert msg["To"] == "dest@example.com"
-    assert msg["Subject"] == "Verify your email"
+    assert msg["Subject"] == "Sign in to MoneyWealth AI"
     assert sent["kwargs"]["hostname"] == "smtp.example.com"
     assert sent["kwargs"]["port"] == 587
     assert sent["kwargs"]["start_tls"] is True
@@ -65,7 +64,7 @@ async def test_smtp_failure_raises_mail_delivery_error(monkeypatch: pytest.Monke
         await send_mail(Mail(to="a@example.com", subject="s", text="b"))
 
 
-def _mock_sendgrid(monkeypatch: pytest.MonkeyPatch, status: int, captured: dict[str, Any]) -> None:
+def _mock_http_post(monkeypatch: pytest.MonkeyPatch, url_prefix: str, status: int, captured: dict[str, Any]) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         captured["url"] = str(request.url)
         captured["auth"] = request.headers.get("authorization")
@@ -85,7 +84,7 @@ async def test_sendgrid_transport_posts_payload(monkeypatch: pytest.MonkeyPatch)
     captured: dict[str, Any] = {}
     monkeypatch.setattr(settings, "mail_transport", "sendgrid")
     monkeypatch.setattr(settings, "sendgrid_api_key", "SG.test-key")
-    _mock_sendgrid(monkeypatch, 202, captured)
+    _mock_http_post(monkeypatch, "sendgrid", 202, captured)
 
     await send_mail(Mail(to="dest@example.com", subject="s", text="b"))
 
@@ -97,25 +96,47 @@ async def test_sendgrid_transport_posts_payload(monkeypatch: pytest.MonkeyPatch)
 async def test_sendgrid_rejection_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "mail_transport", "sendgrid")
     monkeypatch.setattr(settings, "sendgrid_api_key", "SG.test-key")
-    _mock_sendgrid(monkeypatch, 401, {})
+    _mock_http_post(monkeypatch, "sendgrid", 401, {})
 
     with pytest.raises(MailDeliveryError):
         await send_mail(Mail(to="a@example.com", subject="s", text="b"))
 
 
-def test_verification_email_contains_link_and_urlencodes_token() -> None:
-    mail = build_verification_email("a@example.com", "tok/with+specials")
-    # Links to the frontend verify-email page (web_app_url), token url-encoded.
+async def test_resend_transport_posts_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(settings, "mail_transport", "resend")
+    monkeypatch.setattr(settings, "resend_api_key", "re_test-key")
+    _mock_http_post(monkeypatch, "resend", 200, captured)
+
+    await send_mail(Mail(to="dest@example.com", subject="s", text="b"))
+
+    assert captured["url"] == "https://api.resend.com/emails"
+    assert captured["auth"] == "Bearer re_test-key"
+    assert b"dest@example.com" in captured["body"]
+
+
+async def test_resend_rejection_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "mail_transport", "resend")
+    monkeypatch.setattr(settings, "resend_api_key", "re_test-key")
+    _mock_http_post(monkeypatch, "resend", 401, {})
+
+    with pytest.raises(MailDeliveryError):
+        await send_mail(Mail(to="a@example.com", subject="s", text="b"))
+
+
+def test_magic_link_email_contains_link_and_urlencodes_token() -> None:
+    mail = build_magic_link_email("a@example.com", "tok/with+specials")
     assert "/verify-email?token=tok%2Fwith%2Bspecials" in mail.text
     assert mail.to == "a@example.com"
+    assert mail.subject == "Sign in to MoneyWealth AI"
 
 
 def test_half_configured_transport_fails_at_startup() -> None:
     from app.config import Settings
 
-    # conftest env supplies the required DB/JWT settings; the validator must
-    # still reject smtp without a host and sendgrid without a key.
     with pytest.raises(ValueError):
         Settings(mail_transport="smtp", smtp_host=None)
     with pytest.raises(ValueError):
         Settings(mail_transport="sendgrid", sendgrid_api_key=None)
+    with pytest.raises(ValueError):
+        Settings(mail_transport="resend", resend_api_key=None)

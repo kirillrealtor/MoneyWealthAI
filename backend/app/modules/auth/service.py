@@ -1,4 +1,4 @@
-"""Auth business logic: signup, email verification, login, refresh, logout.
+"""Auth business logic: password OR magic-link login, refresh, logout.
 
 Tenant isolation: every users-table access runs inside db.with_tenant() so
 Postgres Row-Level Security is enforced (the app connects as the non-owner
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
@@ -23,7 +23,12 @@ from app.errors import ApiError
 from app.logging_conf import logger
 from app.redis_client import redis_client
 
-from .mailer import build_reset_email, build_verification_email, send_mail
+from .mailer import (
+    build_magic_link_email,
+    build_reset_email,
+    build_verification_email,
+    send_mail,
+)
 from .tokens import (
     find_live_session,
     find_session_including_revoked,
@@ -35,10 +40,12 @@ from .tokens import (
 )
 
 VERIFY_TTL = timedelta(hours=24)
+RESET_TTL = timedelta(hours=1)
+MAGIC_LINK_PURPOSE = "magic_login"
+_LEGACY_VERIFY_PURPOSE = "verify_email"
 
-# Brute-force throttle: lock an (tenant,email) after N failures within the window.
 LOGIN_MAX_FAILS = 10
-LOGIN_FAIL_WINDOW_S = 900  # 15 minutes
+LOGIN_FAIL_WINDOW_S = 900
 
 
 @dataclass
@@ -55,15 +62,10 @@ class TokenPair:
     tenant_id: str
 
 
-# --------------------------------------------------------------------------
-# Brute-force defense (fails OPEN on Redis errors so a cache outage cannot
-# lock everyone out). Two independent counters:
-#   * captcha counter, keyed by (tenant, email): drives the captcha step-up.
-#     Adding a captcha is friction, not a lockout, so it can't be weaponized.
-#   * hard-lock counter, keyed by (tenant, email, IP): drives the 429 lock.
-#     Keying by IP means an attacker can only lock THEIR OWN path, never freeze
-#     a victim who logs in from a different IP (no targeted account-lockout DoS).
-# --------------------------------------------------------------------------
+def _magic_link_ttl() -> timedelta:
+    return timedelta(minutes=settings.magic_link_ttl_minutes)
+
+
 def _captcha_key(tenant_id: str, email: str) -> str:
     return f"login_fail:{tenant_id}:{sha256(email)}"
 
@@ -75,7 +77,7 @@ def _lock_key(tenant_id: str, email: str, ip: str | None) -> str:
 async def _get_count(key: str) -> int:
     try:
         raw = await redis_client.get(key)
-    except Exception as err:  # noqa: BLE001 - fail open
+    except Exception as err:  # noqa: BLE001
         logger.warning("login throttle read failed open", error_message=str(err))
         return 0
     return int(raw) if raw is not None else 0
@@ -85,7 +87,7 @@ async def _incr(key: str) -> None:
     try:
         if await redis_client.incr(key) == 1:
             await redis_client.expire(key, LOGIN_FAIL_WINDOW_S)
-    except Exception as err:  # noqa: BLE001 - fail open
+    except Exception as err:  # noqa: BLE001
         logger.warning("login throttle write failed open", error_message=str(err))
 
 
@@ -101,7 +103,6 @@ async def _clear_failures(tenant_id: str, email: str, ip: str | None) -> None:
         logger.warning("login throttle clear failed open", error_message=str(err))
 
 
-# --------------------------------------------------------------------------
 async def _dispatch_verification(user_id: str, email: str, tenant_id: str) -> None:
     raw = random_token(32)
     await db.execute(
@@ -112,32 +113,27 @@ async def _dispatch_verification(user_id: str, email: str, tenant_id: str) -> No
         sha256(raw),
         datetime.now(timezone.utc) + VERIFY_TTL,
     )
-    # A mail-provider blip must not fail signup (the account exists; the user
-    # recovers via POST /auth/resend-verification). Log loudly and move on.
     try:
         await send_mail(build_verification_email(email, raw))
     except Exception as err:  # noqa: BLE001
         logger.error("verification email failed; user can resend", user_id=user_id, error_message=str(err))
 
 
-async def resend_verification(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
-    """Re-issue a verification email. Anti-enumeration: callers always get the
-    same generic response whether or not the account exists / is verified."""
-    tenant = tenant_id or settings.default_tenant_id
-    email_norm = email.lower().strip()
-    if not await verify_turnstile(captcha_token, ctx.ip):
-        raise ApiError("CAPTCHA_REQUIRED")
-
-    async with db.with_tenant(tenant) as conn:
-        row = await conn.fetchrow(
-            "SELECT user_id, is_verified FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
-        )
-    if row is None or row["is_verified"]:
-        return  # silent: don't reveal whether the account exists or its state
-
-    await _dispatch_verification(str(row["user_id"]), email_norm, tenant)
-    await audit("user.verification_resent", user_id=str(row["user_id"]), tenant_id=tenant,
-                resource="user", resource_id=str(row["user_id"]), ip_address=ctx.ip)
+async def _dispatch_magic_link(user_id: str, email: str, tenant_id: str) -> None:
+    raw = random_token(32)
+    await db.execute(
+        """INSERT INTO email_verification_tokens (user_id, tenant_id, token_hash, purpose, expires_at)
+           VALUES ($1, $2, $3, $4, $5)""",
+        user_id,
+        tenant_id,
+        sha256(raw),
+        MAGIC_LINK_PURPOSE,
+        datetime.now(timezone.utc) + _magic_link_ttl(),
+    )
+    try:
+        await send_mail(build_magic_link_email(email, raw))
+    except Exception as err:  # noqa: BLE001
+        logger.error("magic link email failed; user can retry", user_id=user_id, error_message=str(err))
 
 
 async def signup(
@@ -152,7 +148,6 @@ async def signup(
     tenant = tenant_id or settings.default_tenant_id
     email_norm = email.lower().strip()
 
-    # Captcha is always required on signup (no-op when Turnstile is disabled).
     if not await verify_turnstile(captcha_token, ctx.ip):
         raise ApiError("CAPTCHA_REQUIRED")
 
@@ -162,7 +157,6 @@ async def signup(
         )
         if existing:
             raise ApiError("CONFLICT", message="An account with this email already exists.")
-        # asyncpg returns uuid.UUID; normalize to str at the boundary.
         user_id = str(
             await conn.fetchval(
                 """INSERT INTO users (tenant_id, email, password_hash, full_name)
@@ -174,8 +168,6 @@ async def signup(
             )
         )
 
-    # notification_preferences is now FORCE-RLS (migration 008) — write it inside
-    # the tenant context with its tenant_id.
     async with db.with_tenant(tenant) as conn:
         await conn.execute(
             "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
@@ -187,19 +179,89 @@ async def signup(
     return user_id
 
 
+async def resend_verification(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
+    tenant = tenant_id or settings.default_tenant_id
+    email_norm = email.lower().strip()
+    if not await verify_turnstile(captcha_token, ctx.ip):
+        raise ApiError("CAPTCHA_REQUIRED")
+
+    async with db.with_tenant(tenant) as conn:
+        row = await conn.fetchrow(
+            "SELECT user_id, is_verified FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
+        )
+    if row is None or row["is_verified"]:
+        return
+
+    await _dispatch_verification(str(row["user_id"]), email_norm, tenant)
+    await audit(
+        "user.verification_resent",
+        user_id=str(row["user_id"]),
+        tenant_id=tenant,
+        resource="user",
+        resource_id=str(row["user_id"]),
+        ip_address=ctx.ip,
+    )
+
+
+async def request_magic_link(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
+    tenant = tenant_id or settings.default_tenant_id
+    email_norm = email.lower().strip()
+
+    if not await verify_turnstile(captcha_token, ctx.ip):
+        raise ApiError("CAPTCHA_REQUIRED")
+
+    async with db.with_tenant(tenant) as conn:
+        user = await conn.fetchrow(
+            "SELECT user_id FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
+        )
+        if user is None:
+            user_id = str(
+                await conn.fetchval(
+                    """INSERT INTO users (tenant_id, email, auth_provider)
+                       VALUES ($1, $2, 'magic_link') RETURNING user_id""",
+                    tenant,
+                    email_norm,
+                )
+            )
+            await conn.execute(
+                "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
+            )
+            await audit(
+                "user.signup", user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id, ip_address=ctx.ip
+            )
+        else:
+            user_id = str(user["user_id"])
+
+    await _dispatch_magic_link(user_id, email_norm, tenant)
+    await audit(
+        "user.magic_link_sent",
+        user_id=user_id,
+        tenant_id=tenant,
+        resource="user",
+        resource_id=user_id,
+        ip_address=ctx.ip,
+    )
+
+
 async def verify_email(raw_token: str, ctx: AuthCtx) -> TokenPair:
-    """Verify the emailed token AND log the user straight in — clicking the link
-    proves control of the inbox, so we issue a session and the user lands on the
-    dashboard with no extra login step."""
-    # Token lookup is secret-keyed (cross-tenant by nature); carries tenant_id.
+    """Consume an emailed token and log the user in."""
+    if settings.auth_mode == "magic_link":
+        purpose_clause = "purpose IN ($2, $3)"
+        params: tuple[Any, ...] = (sha256(raw_token), MAGIC_LINK_PURPOSE, _LEGACY_VERIFY_PURPOSE)
+        err_msg = "Invalid or expired sign-in link."
+    else:
+        purpose_clause = "purpose = $2"
+        params = (sha256(raw_token), "verify_email")
+        err_msg = "Invalid or expired verification token."
+
     row = await db.fetchrow(
-        """SELECT token_id, user_id, tenant_id FROM email_verification_tokens
-            WHERE token_hash = $1 AND purpose = 'verify_email'
+        f"""SELECT token_id, user_id, tenant_id FROM email_verification_tokens
+            WHERE token_hash = $1 AND {purpose_clause}
               AND consumed_at IS NULL AND expires_at > NOW()""",
-        sha256(raw_token),
+        *params,
     )
     if not row:
-        raise ApiError("VALIDATION_ERROR", message="Invalid or expired verification token.")
+        raise ApiError("VALIDATION_ERROR", message=err_msg)
 
     tenant = str(row["tenant_id"])
     user_id = str(row["user_id"])
@@ -213,80 +275,7 @@ async def verify_email(raw_token: str, ctx: AuthCtx) -> TokenPair:
     return await _issue_pair(user_id, tenant, tier or "free", ctx)
 
 
-async def _verify_google_id_token(raw_id_token: str) -> dict[str, Any]:
-    """Verify a Google ID token against Google's public keys (RS256), checking
-    issuer + audience (our client id). Runs the blocking JWKS fetch off-loop."""
-    if not settings.google_client_id:
-        raise ApiError("VALIDATION_ERROR", message="Google sign-in is not configured.")
-
-    def _decode() -> dict[str, Any]:
-        jwks = jwt.PyJWKClient("https://www.googleapis.com/oauth2/v3/certs")
-        key = jwks.get_signing_key_from_jwt(raw_id_token).key
-        return jwt.decode(raw_id_token, key, algorithms=["RS256"], audience=settings.google_client_id)
-
-    try:
-        claims = await asyncio.to_thread(_decode)
-    except ApiError:
-        raise
-    except Exception as err:  # noqa: BLE001 - any verification failure = reject
-        logger.warning("google id_token verification failed", service="auth", error_message=str(err))
-        raise ApiError("UNAUTHORIZED", message="Could not verify your Google sign-in.") from err
-    if claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
-        raise ApiError("UNAUTHORIZED", message="Invalid Google token issuer.")
-    if not claims.get("email") or claims.get("email_verified") is not True:
-        raise ApiError("UNAUTHORIZED", message="Your Google account email isn't verified.")
-    return claims
-
-
-async def google_auth(*, id_token: str, tenant_id: str | None, ctx: AuthCtx) -> TokenPair:
-    """Continue with Google: verify the ID token, then upsert the (pre-verified)
-    user and issue a session."""
-    claims = await _verify_google_id_token(id_token)
-    tenant = tenant_id or settings.default_tenant_id
-    email = claims["email"].lower().strip()
-    sub = str(claims["sub"])
-    name = claims.get("name") or claims.get("given_name")
-
-    async with db.with_tenant(tenant) as conn:
-        user = await conn.fetchrow(
-            "SELECT user_id, tier FROM users WHERE tenant_id = $1 AND email = $2", tenant, email
-        )
-        if user is None:
-            user_id = str(
-                await conn.fetchval(
-                    """INSERT INTO users (tenant_id, email, full_name, is_verified, auth_provider, oauth_sub)
-                       VALUES ($1, $2, $3, true, 'google', $4) RETURNING user_id""",
-                    tenant, email, name, sub,
-                )
-            )
-            await conn.execute(
-                "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
-            )
-            tier = "free"
-            created = True
-        else:
-            user_id = str(user["user_id"])
-            tier = user["tier"]
-            created = False
-            # Link the Google identity to an existing account + mark verified.
-            await conn.execute(
-                """UPDATE users SET is_verified = true, last_login_at = NOW(),
-                       oauth_sub = COALESCE(oauth_sub, $2) WHERE user_id = $1""",
-                user_id, sub,
-            )
-    await audit(
-        "user.google_signup" if created else "user.google_login",
-        user_id=user_id, tenant_id=tenant, resource="user", resource_id=user_id, ip_address=ctx.ip,
-    )
-    return await _issue_pair(user_id, tenant, tier, ctx)
-
-
-RESET_TTL = timedelta(hours=1)
-
-
 async def request_password_reset(*, email: str, tenant_id: str | None, captcha_token: str | None, ctx: AuthCtx) -> None:
-    """Issue a reset token + email. Anti-enumeration: always the same generic
-    response whether or not the account exists."""
     tenant = tenant_id or settings.default_tenant_id
     email_norm = email.lower().strip()
     if not await verify_turnstile(captcha_token, ctx.ip):
@@ -297,21 +286,30 @@ async def request_password_reset(*, email: str, tenant_id: str | None, captcha_t
             "SELECT user_id FROM users WHERE tenant_id = $1 AND email = $2", tenant, email_norm
         )
     if row is None:
-        return  # silent — don't reveal whether the email exists
+        return
 
     user_id = str(row["user_id"])
     raw = random_token(32)
     await db.execute(
         """INSERT INTO email_verification_tokens (user_id, tenant_id, token_hash, purpose, expires_at)
            VALUES ($1, $2, $3, 'reset_password', $4)""",
-        user_id, tenant, sha256(raw), datetime.now(timezone.utc) + RESET_TTL,
+        user_id,
+        tenant,
+        sha256(raw),
+        datetime.now(timezone.utc) + RESET_TTL,
     )
     try:
         await send_mail(build_reset_email(email_norm, raw))
     except Exception as err:  # noqa: BLE001
         logger.error("reset email failed", user_id=user_id, error_message=str(err))
-    await audit("user.password_reset_requested", user_id=user_id, tenant_id=tenant,
-                resource="user", resource_id=user_id, ip_address=ctx.ip)
+    await audit(
+        "user.password_reset_requested",
+        user_id=user_id,
+        tenant_id=tenant,
+        resource="user",
+        resource_id=user_id,
+        ip_address=ctx.ip,
+    )
 
 
 async def reset_password(raw_token: str, new_password: str, ctx: AuthCtx) -> None:
@@ -330,10 +328,15 @@ async def reset_password(raw_token: str, new_password: str, ctx: AuthCtx) -> Non
         await conn.execute(
             "UPDATE users SET password_hash = $1 WHERE user_id = $2", hash_password(new_password), user_id
         )
-    # Security: invalidate every existing session after a password change.
     await revoke_all_sessions(user_id)
-    await audit("user.password_reset", user_id=user_id, tenant_id=tenant,
-                resource="user", resource_id=user_id, ip_address=ctx.ip)
+    await audit(
+        "user.password_reset",
+        user_id=user_id,
+        tenant_id=tenant,
+        resource="user",
+        resource_id=user_id,
+        ip_address=ctx.ip,
+    )
 
 
 async def login(
@@ -342,11 +345,8 @@ async def login(
     tenant = tenant_id or settings.default_tenant_id
     email_norm = email.lower().strip()
 
-    # Hard lock is per-IP (can't be used to freeze a victim from elsewhere).
     if await _get_count(_lock_key(tenant, email_norm, ctx.ip)) >= LOGIN_MAX_FAILS:
         raise ApiError("RATE_LIMITED")
-    # Captcha step-up is per-email (stops distributed bot guessing) — friction
-    # only, never a lockout, so it can't be weaponized for DoS.
     captcha_fails = await _get_count(_captcha_key(tenant, email_norm))
     if captcha_fails >= settings.login_captcha_after_fails and not await verify_turnstile(captcha_token, ctx.ip):
         raise ApiError("CAPTCHA_REQUIRED")
@@ -358,8 +358,6 @@ async def login(
             email_norm,
         )
 
-    # Always spend ~equal CPU whether or not the account exists (anti-enumeration).
-    # OAuth-only accounts have no password_hash → password login always fails.
     if user is not None and user["password_hash"]:
         ok = verify_password(password, user["password_hash"])
     else:
@@ -392,12 +390,80 @@ async def login(
     return pair
 
 
+async def _verify_google_id_token(raw_id_token: str) -> dict[str, Any]:
+    if not settings.google_client_id:
+        raise ApiError("VALIDATION_ERROR", message="Google sign-in is not configured.")
+
+    def _decode() -> dict[str, Any]:
+        jwks = jwt.PyJWKClient("https://www.googleapis.com/oauth2/v3/certs")
+        key = jwks.get_signing_key_from_jwt(raw_id_token).key
+        return jwt.decode(raw_id_token, key, algorithms=["RS256"], audience=settings.google_client_id)
+
+    try:
+        claims = await asyncio.to_thread(_decode)
+    except ApiError:
+        raise
+    except Exception as err:  # noqa: BLE001
+        logger.warning("google id_token verification failed", service="auth", error_message=str(err))
+        raise ApiError("UNAUTHORIZED", message="Could not verify your Google sign-in.") from err
+    if claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+        raise ApiError("UNAUTHORIZED", message="Invalid Google token issuer.")
+    if not claims.get("email") or claims.get("email_verified") is not True:
+        raise ApiError("UNAUTHORIZED", message="Your Google account email isn't verified.")
+    return claims
+
+
+async def google_auth(*, id_token: str, tenant_id: str | None, ctx: AuthCtx) -> TokenPair:
+    claims = await _verify_google_id_token(id_token)
+    tenant = tenant_id or settings.default_tenant_id
+    email = claims["email"].lower().strip()
+    sub = str(claims["sub"])
+    name = claims.get("name") or claims.get("given_name")
+
+    async with db.with_tenant(tenant) as conn:
+        user = await conn.fetchrow(
+            "SELECT user_id, tier FROM users WHERE tenant_id = $1 AND email = $2", tenant, email
+        )
+        if user is None:
+            user_id = str(
+                await conn.fetchval(
+                    """INSERT INTO users (tenant_id, email, full_name, is_verified, auth_provider, oauth_sub)
+                       VALUES ($1, $2, $3, true, 'google', $4) RETURNING user_id""",
+                    tenant,
+                    email,
+                    name,
+                    sub,
+                )
+            )
+            await conn.execute(
+                "INSERT INTO notification_preferences (user_id, tenant_id) VALUES ($1, $2)", user_id, tenant
+            )
+            tier = "free"
+            created = True
+        else:
+            user_id = str(user["user_id"])
+            tier = user["tier"]
+            created = False
+            await conn.execute(
+                """UPDATE users SET is_verified = true, last_login_at = NOW(),
+                       oauth_sub = COALESCE(oauth_sub, $2) WHERE user_id = $1""",
+                user_id,
+                sub,
+            )
+    await audit(
+        "user.google_signup" if created else "user.google_login",
+        user_id=user_id,
+        tenant_id=tenant,
+        resource="user",
+        resource_id=user_id,
+        ip_address=ctx.ip,
+    )
+    return await _issue_pair(user_id, tenant, tier, ctx)
+
+
 async def refresh(raw_refresh_token: str, ctx: AuthCtx) -> TokenPair:
     session = await find_live_session(raw_refresh_token)
     if not session:
-        # Reuse detection: if this token exists but was already revoked, it was
-        # rotated away — a replay of an old token signals theft. Revoke the
-        # whole family so neither attacker nor victim keeps a usable session.
         stale = await find_session_including_revoked(raw_refresh_token)
         if stale and stale["revoked_at"] is not None:
             await revoke_all_sessions(str(stale["user_id"]))

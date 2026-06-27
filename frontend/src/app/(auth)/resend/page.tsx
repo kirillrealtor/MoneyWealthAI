@@ -1,20 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/input";
+import { isMagicLinkAuth } from "@/lib/auth/mode";
 
 export default function ResendPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  useEffect(() => {
+    if (isMagicLinkAuth()) router.replace("/login");
+  }, [router]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Anti-enumeration: the backend always returns the same generic response.
     await fetch("/api/auth/resend-verification", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -23,6 +29,8 @@ export default function ResendPage() {
     setLoading(false);
     setSent(true);
   }
+
+  if (isMagicLinkAuth()) return null;
 
   return (
     <Panel className="p-7 sm:p-8">

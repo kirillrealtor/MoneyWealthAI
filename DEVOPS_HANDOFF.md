@@ -76,8 +76,25 @@ definition; put non-secrets as plain task env.
 | `PLAID_PRODUCTS` | `transactions,liabilities,investments` |
 | `SYNC_WORKER_ENABLED` | `true` (drains the durable sync_jobs queue) |
 | `TOKEN_BUDGET_FREE` | e.g. `2000000` (per-user daily AI token budget; default 10k is very low) |
-| `MAIL_TRANSPORT` | `console` (no email) or `smtp` (see `EMAIL_SETUP.md`) |
+| `MAIL_TRANSPORT` | `resend` (magic-link emails via Resend API) |
+| `MAIL_FROM` | `MoneyWealth AI <onboarding@resend.dev>` (Resend test sender; no custom domain) |
+| `MAGIC_LINK_TTL_MINUTES` | `15` |
 | `GOOGLE_CLIENT_ID` | only if "Continue with Google" is enabled (see §7) |
+
+**SSM secrets (add `RESEND_API_KEY`):**
+
+| Parameter | Purpose |
+|---|---|
+| `/moneywealth/RESEND_API_KEY` | Resend API key (`re_...`, Sending access). Required for magic-link email. |
+
+Set once (never commit the value):
+
+```powershell
+aws ssm put-parameter --name /moneywealth/RESEND_API_KEY --type SecureString `
+  --value "re_YOUR_KEY" --overwrite --region us-east-1
+```
+
+**Resend test sender:** `onboarding@resend.dev` works without domain verification, but Resend only delivers to the inbox of the account that owns the API key until you verify a custom domain.
 
 **Vercel env (frontend), Production scope:**
 

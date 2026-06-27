@@ -19,7 +19,11 @@
         { "name": "SYNC_WORKER_ENABLED", "value": "true" },
         { "name": "ALLOWED_HOSTS", "value": "*" },
         { "name": "TRUST_ANY_HOST", "value": "true" },
-        { "name": "WEB_APP_URL", "value": "https://moneywealth-omega.vercel.app" }
+        { "name": "WEB_APP_URL", "value": "https://moneywealth-omega.vercel.app" },
+        { "name": "AUTH_MODE", "value": "password" },
+        { "name": "MAIL_TRANSPORT", "value": "resend" },
+        { "name": "MAIL_FROM", "value": "MoneyWealth AI <onboarding@resend.dev>" },
+        { "name": "MAGIC_LINK_TTL_MINUTES", "value": "15" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/DATABASE_URL" },
@@ -30,7 +34,8 @@
         { "name": "PLAID_ENC_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_ENC_KEY" },
         { "name": "PLAID_CLIENT_ID", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_CLIENT_ID" },
         { "name": "PLAID_SECRET", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/PLAID_SECRET" },
-        { "name": "GROQ_API_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/GROQ_API_KEY" }
+        { "name": "GROQ_API_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/GROQ_API_KEY" },
+        { "name": "RESEND_API_KEY", "valueFrom": "arn:aws:ssm:us-east-1:346133548342:parameter/moneywealth/RESEND_API_KEY" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

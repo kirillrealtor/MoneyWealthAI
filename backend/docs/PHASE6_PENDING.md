@@ -36,11 +36,12 @@ to a worker fleet to complete inside a daily window at scale.
 - **Load test** — `tests/load/advisor_load_test.js` (k6) with the p95/error thresholds.
 - **Docs** — `PRODUCTION_DEPLOYMENT.md`, `DR_RUNBOOK.md`.
 
-## Deferred — infrastructure-as-code (the real remaining work)
-- 🏗️ **Terraform/IaC** for: Aurora Serverless v2 (Multi-AZ), **RDS Proxy**, ElastiCache
-  Redis (Multi-AZ), ECS Fargate (API + worker services, autoscaling), ALB, **WAF**,
-  **Secrets Manager** + rotation Lambda, **SQS** queues + DLQs, EventBridge schedules,
-  S3, CloudWatch alarms/dashboards.
+## Deferred — infrastructure-as-code
+- ✅ **Terraform (core stack)** — Aurora Serverless v2 + **RDS Proxy**, ECS Fargate + ALB,
+  autoscaling, SSM secret shells, CloudWatch alarms. See `infra/terraform/`.
+- 🏗️ **Remaining IaC** — ElastiCache Redis (Multi-AZ) to replace Upstash, **WAF**,
+  **Secrets Manager rotation** Lambda, **SQS** queues + DLQs, EventBridge schedules,
+  S3, expanded CloudWatch dashboards.
 - 🏗️ **SQS consumers** — wire the existing idempotent units (`run_sync_for_item`,
   `run_alerts_for_user`, notification dispatcher, outbox retry) to SQS workers, replacing
   the in-process spawn / cron loops. Transport swap, not a rewrite.
@@ -53,7 +54,7 @@ to a worker fleet to complete inside a daily window at scale.
 - ⚙️ **SOC 2** prep — audit_logs + access logging are in place; formal audit at Series A.
 
 ## What to provision first (smallest path to a safe prod)
-1. Aurora Multi-AZ + **RDS Proxy** + Secrets Manager → `DATABASE_URL` as `app_user`.
-2. ElastiCache Redis (Multi-AZ). 3. ECS API behind ALB + **WAF** + TLS.
+1. ✅ Aurora Serverless v2 + **RDS Proxy** + SSM → `DATABASE_URL` as `app_user` (done).
+2. ElastiCache Redis (Multi-AZ) or keep Upstash for demo. 3. ECS API behind ALB + **WAF** + TLS.
 4. SQS + worker service for Plaid sync & alerts. 5. EventBridge schedules.
 6. Prometheus scrape of `/metrics` + the alarms in `PRODUCTION_DEPLOYMENT.md`.

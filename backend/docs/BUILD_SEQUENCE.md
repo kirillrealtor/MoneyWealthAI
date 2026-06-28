@@ -4,7 +4,7 @@ You chose the full blueprint. This is the order to build it so there's always so
 
 ## Phase 0 — Foundation (Week 1)
 - Repo, TypeScript, Fastify, Docker, lint/type-check/test CI (Section 23).
-- Aurora (Serverless v2, Multi-AZ) + **RDS Proxy** + Redis + Secrets Manager provisioned via IaC.
+- Aurora (Serverless v2) + **RDS Proxy** + Redis + Secrets Manager — **provisioned** in `infra/terraform/`.
 - Run `db/schema.sql` migration. Migration tooling (e.g. node-pg-migrate / Drizzle).
 - Health endpoint, structured logger (Section 19.1), trace_id middleware.
 - **Exit test:** container boots, connects through RDS Proxy, `/health` green.

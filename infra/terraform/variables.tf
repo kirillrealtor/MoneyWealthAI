@@ -64,7 +64,7 @@ variable "max_capacity" {
   default = 10
 }
 
-# ── Database ────────────────────────────────────────────────────────────────
+# ── Database (Aurora PostgreSQL Serverless v2) ────────────────────────────────
 variable "db_name" {
   type    = string
   default = "financial_advisor"
@@ -75,20 +75,22 @@ variable "db_master_username" {
   default = "mwadmin"
 }
 
-variable "db_instance_class" {
-  type    = string
-  default = "db.t4g.micro"
+variable "aurora_engine_version" {
+  type        = string
+  description = "Aurora PostgreSQL engine version."
+  default     = "16.4"
 }
 
-variable "db_multi_az" {
-  type        = bool
-  description = "Enable RDS Multi-AZ standby (required for production HA)."
-  default     = true
+variable "aurora_min_acu" {
+  type        = number
+  description = "Aurora Serverless v2 minimum ACU (0.5 = lowest cost; ~$43/mo us-east-1)."
+  default     = 0.5
 }
 
-variable "db_allocated_storage" {
-  type    = number
-  default = 20
+variable "aurora_max_acu" {
+  type        = number
+  description = "Aurora Serverless v2 maximum ACU (cap spend during spikes)."
+  default     = 2
 }
 
 # ── TLS / DNS ───────────────────────────────────────────────────────────────

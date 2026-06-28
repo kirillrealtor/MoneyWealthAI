@@ -1,9 +1,8 @@
 # MoneyWealth AI — DevOps Deployment Handoff
 
-Authoritative deploy guide for a fresh engineer. The previous live environment
-(AWS + Vercel) was **torn down**, so this is a clean-slate deploy from the repo.
-This supersedes the older `DEPLOY.md` (which described an App Runner path that
-AWS discontinued for new customers — **use ECS Fargate, documented here**).
+Authoritative deploy guide. Production database: **Amazon Aurora PostgreSQL 16**
+(Serverless v2) behind **RDS Proxy**. Supersedes the older `DEPLOY.md` (App Runner +
+single-instance RDS).
 
 > **Two ways to deploy:**
 > - **A. Terraform (recommended)** — `infra/terraform/` provisions the whole
@@ -21,16 +20,22 @@ AWS discontinued for new customers — **use ECS Fargate, documented here**).
 Browser ──► Vercel (Next.js 16 frontend + BFF route handlers)
                        │  (server-side only; browser never calls the API directly)
                        ▼
-              AWS ECS Fargate  (FastAPI / Uvicorn, container port 8080)
+              ALB ──► ECS Fargate  (FastAPI / Uvicorn, container port 8080)
                        │                    │
-              AWS RDS PostgreSQL      Upstash Redis (serverless)
+              RDS Proxy ──► Aurora PostgreSQL 16 (Serverless v2)
+                       │
+              Upstash Redis (serverless)
 ```
 
+- ECS tasks reach the database **only through RDS Proxy** (security groups block
+  direct task → Aurora connections).
+- Both `DATABASE_URL` and `MIGRATION_DATABASE_URL` use the **proxy hostname**.
+  URL-encode special characters in passwords (`[`, `]`, `$`, `@`, …).
 - The browser only talks to Vercel (same-origin) — **no CORS**. The Next BFF
   (`/api/auth/*`, `/api/backend/[...path]`) calls the backend server-side using
   the server-only `API_BASE_URL`. Access token lives in memory; refresh token is
   an httpOnly first-party cookie (`mw_rt`).
-- Backend is stateless → scale horizontally. State is Postgres + Redis.
+- Backend is stateless → scale horizontally. State is Aurora + Redis.
 
 ## 2. Prerequisites
 
@@ -42,7 +47,7 @@ Browser ──► Vercel (Next.js 16 frontend + BFF route handlers)
   - `backend/` — FastAPI app, `Dockerfile`, `db/migrations/*.sql`,
     `scripts/migrate.py`, `backend/deploy/task-definition.json`.
   - `frontend/` — Next.js app (deploys to Vercel).
-  - `infra/terraform/` — full IaC (network, rds, ecs, alb, autoscaling, iam, observability).
+  - `infra/terraform/` — full IaC (VPC, **Aurora + RDS Proxy**, ECR, ECS, ALB, autoscaling, IAM, observability).
 
 ## 3. Configuration (env vars & secrets)
 
@@ -54,12 +59,12 @@ definition; put non-secrets as plain task env.
 
 | Name | What |
 |---|---|
-| `DATABASE_URL` | App role DSN: `postgresql://app_user:PASS@RDS:5432/financial_advisor?sslmode=require` (non-owner role — RLS enforced) |
-| `MIGRATION_DATABASE_URL` | Owner DSN (runs DDL): `postgresql://OWNER:PASS@RDS:5432/...?sslmode=require` |
+| `DATABASE_URL` | App role DSN via **RDS Proxy**: `postgresql://app_user:PASS@<proxy-endpoint>:5432/financial_advisor?sslmode=require` (RLS enforced) |
+| `MIGRATION_DATABASE_URL` | Owner DSN via **RDS Proxy**: `postgresql://mwadmin:PASS@<proxy-endpoint>:5432/financial_advisor?sslmode=require` (DDL only) |
 | `REDIS_URL` | Upstash `rediss://...` URL |
 | `JWT_ACCESS_SECRET` | random ≥ 32 chars |
 | `JWT_REFRESH_SECRET` | random ≥ 32 chars |
-| `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENC_KEY` | Plaid creds + a 32-byte base64 enc key |
+| `PLAID_CLIENT_ID`, `PLAID_SANDBOX_SECRET`, `PLAID_ENC_KEY` | Plaid creds + a 32-byte base64 enc key |
 | `GROQ_API_KEY` | AI provider key (or Anthropic) |
 | `SMTP_PASSWORD` | only if email enabled — see `EMAIL_SETUP.md` |
 
@@ -106,31 +111,41 @@ aws ssm put-parameter --name /moneywealth/RESEND_API_KEY --type SecureString `
 
 ## 4. Provision data stores
 
-1. **RDS PostgreSQL** (18.x, `db.t4g.micro` for demo / larger for prod), DB name
-   `financial_advisor`, `sslmode=require`. Create two roles: an **owner** (DDL /
-   migrations) and a non-owner **`app_user`** (the app connects as this — RLS is
-   `FORCE`d and the app role is not `BYPASSRLS`). Lock the security group to the
-   backend's SG (path A) or to known IPs (path B).
-   - The admin console uses SECURITY DEFINER functions; the owner/admin role used
-     by those must be able to read cross-tenant. Last time `BYPASSRLS` was granted
-     to the migration role — see migrations `009`, `012`.
+1. **Aurora PostgreSQL 16 (Serverless v2)** — provisioned by `infra/terraform/rds.tf`
+   (default 0.5–2 ACU for hackathon cost). DB name `financial_advisor`. Includes
+   **RDS Proxy**, encrypted storage, 7-day backups. Passwords in Secrets Manager:
+   - Aurora master (`mwadmin`): `terraform output aurora_master_secret_arn`
+   - App role (`app_user`): secret `moneywealth/app-user-db` (Terraform-generated)
 2. **Upstash Redis** — create a database, copy the `rediss://` URL → `REDIS_URL`.
+
+After `terraform apply`, complete out-of-band steps in
+[infra/terraform/README.md](infra/terraform/README.md): SSM connection strings,
+migrations, bootstrap SQL (`ALTER ROLE mwadmin BYPASSRLS`), first admin user.
 
 ## 5. Run database migrations
 
-From `backend/` with the owner DSN:
+Aurora is in a **private VPC** — run migrations from an **ECS one-off task** (not
+your laptop):
 
 ```bash
-export MIGRATION_DATABASE_URL="postgresql://OWNER:PASS@RDS:5432/financial_advisor?sslmode=require"
-python -m scripts.migrate     # applies db/migrations/*.sql idempotently (tracks applied)
+# Command override: python,-m,scripts.migrate
+# Networking: same VPC/subnets/SG as the running service (moneywealth-task SG)
+# See infra/terraform/README.md for JSON override files + aws ecs run-task
 ```
 
-Create the first **admin** user afterward (insert into `admins` with a bcrypt
-`password_hash` — see `backend/app/modules/admin/` for the hashing helper).
+Or locally against **docker-compose Postgres** only (`docker compose up -d postgres redis`).
+
+Create the first **admin** user via ECS one-off task:
+
+```bash
+# Command: python,-m,scripts.create_admin,<email>,<password>,super_admin
+```
+
+See `backend/scripts/create_admin.py`. Idempotent — re-run updates password/role.
 
 ## 6. Deploy — Path A: Terraform (recommended)
 
-`infra/terraform/` provisions VPC/subnets, RDS, ECR, ECS Fargate **behind an
+`infra/terraform/` provisions VPC/subnets, **Aurora + RDS Proxy**, ECR, ECS Fargate **behind an
 ALB** (stable HTTPS, no IP churn), autoscaling, IAM, and CloudWatch.
 
 ```bash
@@ -219,7 +234,8 @@ demo only — **prefer Path A (ALB + HTTPS) for anything real.**
 
 ## What the handoff engineer must supply (fresh accounts)
 
-New AWS account/creds, new Upstash Redis, new RDS + roles, fresh JWT secrets,
-Plaid + AI keys, a domain + ACM cert (Path A), and the GitHub repo secrets
-(`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `VERCEL_TOKEN`). All previous live
-credentials were rotated/removed during teardown.
+New AWS account/creds, new Upstash Redis, fresh Aurora cluster (via Terraform),
+SSM connection strings, fresh JWT secrets, Plaid + AI keys, a domain + ACM cert
+(Path A), and the GitHub repo secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`VERCEL_TOKEN`). See [backend/AURORA_MIGRATION_PROGRESS.txt](backend/AURORA_MIGRATION_PROGRESS.txt)
+for the completed cutover checklist.

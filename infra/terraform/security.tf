@@ -1,6 +1,5 @@
-# Three-tier security groups. Traffic only flows ALB -> task -> RDS; nothing is
-# open to the internet except the ALB's 80/443. This replaces the prototype's
-# "task port 8080 open to 0.0.0.0/0" with proper segmentation.
+# Three-tier security groups. Traffic only flows ALB -> task -> RDS Proxy -> Aurora;
+# nothing is open to the internet except the ALB's 80/443.
 
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb"
@@ -51,13 +50,13 @@ resource "aws_security_group" "task" {
   tags = { Name = "${var.name}-task" }
 }
 
-resource "aws_security_group" "rds" {
-  name        = "${var.name}-rds"
-  description = "RDS: accepts Postgres only from the ECS task SG"
+resource "aws_security_group" "rds_proxy" {
+  name        = "${var.name}-rds-proxy"
+  description = "RDS Proxy: Postgres from ECS tasks only"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Postgres from tasks only"
+    description     = "Postgres from tasks"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
@@ -69,5 +68,26 @@ resource "aws_security_group" "rds" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "${var.name}-rds" }
+  tags = { Name = "${var.name}-rds-proxy" }
+}
+
+resource "aws_security_group" "aurora" {
+  name        = "${var.name}-aurora"
+  description = "Aurora: Postgres from RDS Proxy only"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Postgres from RDS Proxy"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.rds_proxy.id]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = { Name = "${var.name}-aurora" }
 }

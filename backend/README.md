@@ -8,12 +8,13 @@ build order in [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md).
 > Python is the primary application language; if/when heavy quant or ML work
 > appears (evals, Monte Carlo modeling, embeddings), it stays in Python too.
 
-**Deployed:** runs on **AWS ECS Fargate** with **RDS PostgreSQL**, **Upstash Redis**, and
-secrets in **AWS SSM Parameter Store**. Image lives in ECR; the task-definition template
-is in [`deploy/task-definition.json`](deploy/task-definition.json) and the
-push→ECR→ECS pipeline in [`../.github/workflows/deploy-backend.yml`](../.github/workflows/deploy-backend.yml).
-The full reproducible target stack (VPC, ALB, autoscaling, Multi-AZ RDS) is Terraform in
-[`../infra/terraform/`](../infra/terraform/). Runbook: [`../DEPLOY.md`](../DEPLOY.md).
+**Deployed:** runs on **AWS ECS Fargate** with **Aurora PostgreSQL 16** (Serverless v2),
+**RDS Proxy**, **Upstash Redis**, and secrets in **AWS SSM Parameter Store**. Image lives
+in ECR; the task-definition template is in [`deploy/task-definition.json`](deploy/task-definition.json)
+and the push→ECR→ECS pipeline in [`../.github/workflows/deploy-backend.yml`](../.github/workflows/deploy-backend.yml).
+Infrastructure (VPC, ALB, Aurora, RDS Proxy, autoscaling) is **Terraform** in
+[`../infra/terraform/`](../infra/terraform/). Runbook: [`../DEVOPS_HANDOFF.md`](../DEVOPS_HANDOFF.md).
+Aurora cutover log: [`AURORA_MIGRATION_PROGRESS.txt`](AURORA_MIGRATION_PROGRESS.txt).
 
 ## Status
 - ✅ **Phase 0** — scaffold, config, asyncpg pool (RDS-Proxy-ready), SQL migrations, structlog, tracing, health
@@ -74,6 +75,8 @@ Interactive API docs: http://localhost:3000/docs (FastAPI auto-generated).
 |---|---|
 | `uvicorn app.main:app --reload` | Hot-reload dev server |
 | `python -m scripts.migrate` | Apply pending SQL migrations |
+| `python -m scripts.create_admin` | Bootstrap admin user (see script docstring) |
+| `python -m scripts.bootstrap_aurora_roles` | Post-migrate: sync app_user password + BYPASSRLS |
 | `ruff check .` | Lint |
 | `mypy app scripts` | Type-check |
 | `pytest` | Unit tests |

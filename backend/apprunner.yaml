@@ -1,3 +1,4 @@
+# DEPRECATED — use ECS Fargate + Aurora (see DEVOPS_HANDOFF.md).
 # AWS App Runner — managed Python runtime (no ECR/Docker push needed).
 # In the App Runner service, set "Source directory" to /backend so it finds this.
 # App Runner injects $PORT (default 8080); the app listens on it.

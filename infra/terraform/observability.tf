@@ -66,15 +66,28 @@ resource "aws_cloudwatch_metric_alarm" "unhealthy_hosts" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
 }
 
-resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
-  alarm_name          = "${var.name}-rds-cpu-high"
+resource "aws_cloudwatch_metric_alarm" "aurora_cpu" {
+  alarm_name          = "${var.name}-aurora-cpu-high"
   namespace           = "AWS/RDS"
   metric_name         = "CPUUtilization"
-  dimensions          = { DBInstanceIdentifier = aws_db_instance.main.identifier }
+  dimensions          = { DBClusterIdentifier = aws_rds_cluster.main.cluster_identifier }
   statistic           = "Average"
   period              = 300
   evaluation_periods  = 3
   threshold           = 85
+  comparison_operator = "GreaterThanThreshold"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "aurora_acu" {
+  alarm_name          = "${var.name}-aurora-acu-high"
+  namespace           = "AWS/RDS"
+  metric_name         = "ServerlessDatabaseCapacity"
+  dimensions          = { DBClusterIdentifier = aws_rds_cluster.main.cluster_identifier }
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 2
+  threshold           = var.aurora_max_acu * 0.9
   comparison_operator = "GreaterThanThreshold"
   alarm_actions       = [aws_sns_topic.alerts.arn]
 }

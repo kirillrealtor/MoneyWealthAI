@@ -26,12 +26,13 @@ To activate in staging/production:
 - 🧩 Frontend: render the Turnstile widget with the site key and send the token as `captcha_token` on signup/login.
 
 ## 3. Database — production RLS role
-**Status:** enforced locally via non-owner `app_user` + `FORCE ROW LEVEL SECURITY`. Migrations run as the owner/superuser.
+**Status:** ✅ **Active in production** on Aurora PostgreSQL via RDS Proxy.
 
-To activate in production:
-- ⚙️ Provision the `app_user` role via IaC (not the dev `DO` block); strong password in **Secrets Manager**.
-- ⚙️ App `DATABASE_URL` → **RDS Proxy** endpoint as `app_user`; `MIGRATION_DATABASE_URL` → owner, run only during deploys.
-- ⚙️ Confirm `app_user` is **NOBYPASSRLS** and **not** a superuser (Aurora master user bypasses RLS — never point the app at it).
+- `app_user` (NOBYPASSRLS) — app connects via `DATABASE_URL` → proxy endpoint.
+- `mwadmin` (BYPASSRLS) — migrations via `MIGRATION_DATABASE_URL` → proxy endpoint;
+  `ALTER ROLE mwadmin BYPASSRLS` applied for admin SECURITY DEFINER functions.
+- Passwords in **Secrets Manager**; connection strings in **SSM** (URL-encoded).
+- Local dev still uses docker-compose Postgres + migration `003` dev `app_user` block.
 
 ## 4. Secrets & config (no secrets in env files in prod)
 - 🔑 Move to **AWS Secrets Manager**: DB URLs, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, Turnstile secret, email provider key.
@@ -48,7 +49,7 @@ To activate in production:
 ## Quick activation checklist (pre-launch)
 - [ ] Email provider chosen, domain DKIM/SPF/DMARC verified, `send_mail()` adapter shipped
 - [ ] Turnstile site created; `TURNSTILE_ENABLED=true` + secret in Secrets Manager; frontend widget live
-- [ ] `app_user` role provisioned by IaC; app on RDS Proxy as `app_user`; verified `NOBYPASSRLS`
+- [x] `app_user` role provisioned; app on RDS Proxy as `app_user`; verified `NOBYPASSRLS`
 - [ ] All secrets in Secrets Manager; no secrets in committed env files
 - [ ] Production `ALLOWED_HOSTS` + `CORS_ORIGINS` set
 - [ ] WAF + TLS/HSTS verified at the edge

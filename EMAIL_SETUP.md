@@ -22,7 +22,7 @@ vars (and one SSM secret for production Resend) — no code changes when switchi
 | `MAGIC_LINK_TTL_MINUTES` | backend | Ignored | Link expiry (default `15`) |
 
 Shared (both modes): `API_BASE_URL` (frontend, server-only), `NEXT_PUBLIC_APP_URL`
-(frontend public origin), JWT secrets, database, Redis.
+(frontend public origin), JWT secrets, Aurora/SSM database URLs, Redis.
 
 Check active mode at runtime: `GET /api/v1/auth/config` → `{ "auth_mode": "..." }`.
 

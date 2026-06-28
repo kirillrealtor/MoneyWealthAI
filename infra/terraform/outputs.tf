@@ -8,14 +8,29 @@ output "ecr_repository_url" {
   value       = aws_ecr_repository.backend.repository_url
 }
 
-output "rds_endpoint" {
-  description = "RDS endpoint:port."
-  value       = "${aws_db_instance.main.address}:${aws_db_instance.main.port}"
+output "aurora_cluster_endpoint" {
+  description = "Aurora writer endpoint — use for MIGRATION_DATABASE_URL (owner DDL only)."
+  value       = aws_rds_cluster.main.endpoint
 }
 
-output "rds_master_secret_arn" {
-  description = "Secrets Manager ARN holding the RDS-managed master password."
-  value       = aws_db_instance.main.master_user_secret[0].secret_arn
+output "aurora_reader_endpoint" {
+  description = "Aurora reader endpoint (unused until a reader instance is added)."
+  value       = aws_rds_cluster.main.reader_endpoint
+}
+
+output "rds_proxy_endpoint" {
+  description = "RDS Proxy endpoint — use for DATABASE_URL (app_user, pooled)."
+  value       = aws_db_proxy.main.endpoint
+}
+
+output "aurora_master_secret_arn" {
+  description = "Secrets Manager ARN holding the Aurora master password."
+  value       = aws_rds_cluster.main.master_user_secret[0].secret_arn
+}
+
+output "app_user_secret_arn" {
+  description = "Secrets Manager ARN holding app_user credentials (password synced to proxy)."
+  value       = aws_secretsmanager_secret.app_user.arn
 }
 
 output "ecs_cluster" {

@@ -10,9 +10,11 @@ desired_count = 2
 min_capacity  = 2
 max_capacity  = 10
 
-# Database
-db_instance_class = "db.t4g.micro" # bump to db.t4g.small+ for real load
-db_multi_az       = true
+# Aurora PostgreSQL Serverless v2 (hackathon cost cap: 0.5–2 ACU, writer only)
+# ~$43/mo min ACU + ~$11/mo RDS Proxy + ECS/NAT/ALB — fits ~$100 credits for demo period.
+aurora_engine_version = "16.4"
+aurora_min_acu        = 0.5
+aurora_max_acu        = 2
 
 # TLS: create an ACM cert for your domain in us-east-1, then paste its ARN.
 # Leave empty to run HTTP-only (not for production).

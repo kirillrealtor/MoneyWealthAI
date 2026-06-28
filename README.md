@@ -19,9 +19,9 @@ advisor that cites the data it used and **never invents numbers**.
 ```
 Browser ──► Vercel (Next.js 16 frontend + BFF)  ──►  AWS ECS Fargate (FastAPI)
    only talks to Vercel (same-origin)                 │            │
-   nonce CSP · httpOnly refresh cookie         AWS RDS Postgres   Upstash Redis
-                                               (FORCE RLS)        (rate limits,
-                                                                   AI token budgets)
+   nonce CSP · httpOnly refresh cookie    Aurora PostgreSQL   Upstash Redis
+                                        (via RDS Proxy,      (rate limits,
+                                         FORCE RLS)           AI token budgets)
                                                + Plaid · Groq/Claude (egress)
 ```
 
@@ -49,7 +49,9 @@ Browser ──► Vercel (Next.js 16 frontend + BFF)  ──►  AWS ECS Fargate
 │   └── src/                app (BFF) · components · design tokens · Vitest/Playwright
 ├── infra/terraform/      Infrastructure as Code — the scalable AWS target stack
 ├── .github/workflows/    CI (lint/type/test/AI-eval) + auto-deploy (backend ECS, frontend Vercel)
-├── DEPLOY.md             deployment runbook
+├── DEPLOY.md             legacy runbook (superseded — see DEVOPS_HANDOFF.md)
+├── DEVOPS_HANDOFF.md     authoritative deploy guide (ECS + Aurora)
+├── backend/AURORA_MIGRATION_PROGRESS.txt  Aurora cutover log (complete)
 └── docker-compose.yml    local Postgres + Redis
 ```
 
@@ -59,10 +61,10 @@ Browser ──► Vercel (Next.js 16 frontend + BFF)  ──►  AWS ECS Fargate
 |---|---|
 | **Frontend** | Next.js 16 (App Router, RSC, BFF), React 19, TypeScript 5, Tailwind 4 (token `@theme`), TanStack Query, Radix, zod, react-markdown, react-plaid-link, motion, posthog-js |
 | **Backend** | Python 3.12, FastAPI, asyncpg (raw parameterized SQL — no ORM), Pydantic v2, JWT |
-| **Data** | PostgreSQL (FORCE RLS), Redis (rate limits + AI token budgets), durable `sync_jobs` queue |
+| **Data** | Aurora PostgreSQL 16 (Serverless v2, FORCE RLS), Redis (rate limits + AI token budgets), durable `sync_jobs` queue |
 | **AI** | Groq (Llama 3.3 70B) / Anthropic Claude — grounded agentic tool-calling + safety eval harness |
 | **Integrations** | Plaid (transactions/liabilities/investments), Stripe (billing, built) |
-| **Infra** | AWS ECS Fargate · RDS · ECR · SSM (secrets) · CloudWatch · Upstash Redis · Vercel · Docker · Terraform |
+| **Infra** | AWS ECS Fargate · Aurora PostgreSQL · RDS Proxy · ECR · SSM · CloudWatch · Upstash Redis · Vercel · Terraform |
 | **Quality** | ruff, mypy, pytest (backend) · ESLint, Vitest + Testing Library, Playwright + axe (frontend) |
 
 ## Quick start (local)
@@ -105,9 +107,10 @@ the frontend to Vercel (and the backend to ECS once AWS secrets are set).
 
 ## Deployment
 
-Live today on **AWS (ECS Fargate + RDS + SSM) + Upstash Redis + Vercel**. The repeatable,
-reviewable target architecture (dedicated VPC, ALB, autoscaling, Multi-AZ RDS) is captured
-as **Terraform** in [infra/terraform/](infra/terraform/). Step-by-step runbook: [DEPLOY.md](DEPLOY.md).
+Live today on **AWS (ECS Fargate + Aurora PostgreSQL + RDS Proxy + SSM) + Upstash Redis + Vercel**.
+Infrastructure is **Terraform** in [infra/terraform/](infra/terraform/).
+Deploy runbook: [DEVOPS_HANDOFF.md](DEVOPS_HANDOFF.md). Aurora cutover log:
+[backend/AURORA_MIGRATION_PROGRESS.txt](backend/AURORA_MIGRATION_PROGRESS.txt).
 
 ## Status
 

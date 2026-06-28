@@ -32,6 +32,16 @@ def test_dev_still_allows_wildcard_hosts() -> None:
     assert s.allowed_hosts_list == ["*"]
 
 
+def test_plaid_configured_with_sandbox_secret() -> None:
+    s = Settings(
+        plaid_sandbox_secret="sandbox-key",
+        plaid_client_id="cid",
+        plaid_enc_key="e" * 43,
+        **_BASE_ENV,
+    )  # type: ignore[arg-type]
+    assert s.plaid_configured is True
+
+
 def test_health_probe_bypasses_trusted_host() -> None:
     """ALB probes /health with Host = task IP; API routes stay protected."""
     from starlette.applications import Starlette

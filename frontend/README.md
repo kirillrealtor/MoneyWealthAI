@@ -81,7 +81,7 @@ flash). Money renders via `<Money>`/`<MoneyInput>` with tabular figures and sema
 
 ## Deploy
 
-Production runs on **Vercel**. Merges to `main` auto-deploy via
+Production runs on **Vercel** at https://moneywealth-ai.vercel.app. Merges to `main` auto-deploy via
 `.github/workflows/deploy-frontend.yml` (token-based; needs the `VERCEL_TOKEN` repo
 secret). `API_BASE_URL` (server-only) points at the backend; `NEXT_PUBLIC_APP_URL` is the
 public site URL.

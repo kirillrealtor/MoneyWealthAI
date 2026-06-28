@@ -4,7 +4,7 @@
 clear, *grounded* guidance: budgets, goals, debt payoff, portfolio health, and an AI
 advisor that cites the data it used and **never invents numbers**.
 
-- 🌐 **Live app:** https://moneywealth-omega.vercel.app
+- 🌐 **Live app:** https://moneywealth-ai.vercel.app
 - 🧠 Grounded AI advisor (Groq Llama 3.3 70B / Anthropic Claude) with a real safety stack
 - 🏦 Bank linking via Plaid · 🔒 read-only, encrypted · 📊 budgets, goals, debt, portfolio
 - 🎨 Light **and** dark themes ("Emerald Calm") · ♿ WCAG-minded · 📱 responsive PWA

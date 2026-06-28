@@ -19,7 +19,7 @@
         { "name": "SYNC_WORKER_ENABLED", "value": "true" },
         { "name": "ALLOWED_HOSTS", "value": "moneywealth-alb-600599809.us-east-1.elb.amazonaws.com" },
         { "name": "TRUST_ANY_HOST", "value": "false" },
-        { "name": "WEB_APP_URL", "value": "https://moneywealth-omega.vercel.app" },
+        { "name": "WEB_APP_URL", "value": "https://moneywealth-ai.vercel.app" },
         { "name": "AUTH_MODE", "value": "password" },
         { "name": "MAIL_TRANSPORT", "value": "resend" },
         { "name": "MAIL_FROM", "value": "MoneyWealth AI <onboarding@resend.dev>" },

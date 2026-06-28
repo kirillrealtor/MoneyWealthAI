@@ -65,7 +65,7 @@ Restart backend and frontend. Use `/signup` and `/login`.
 AUTH_MODE=password
 MAIL_TRANSPORT=resend
 MAIL_FROM=MoneyWealth AI <onboarding@resend.dev>
-WEB_APP_URL=https://moneywealth-omega.vercel.app
+WEB_APP_URL=https://moneywealth-ai.vercel.app
 ```
 
 **Backend (SSM secret):** `RESEND_API_KEY` → `/moneywealth/RESEND_API_KEY`
@@ -75,7 +75,7 @@ WEB_APP_URL=https://moneywealth-omega.vercel.app
 ```env
 NEXT_PUBLIC_AUTH_MODE=password
 API_BASE_URL=<your backend URL>
-NEXT_PUBLIC_APP_URL=https://moneywealth-omega.vercel.app
+NEXT_PUBLIC_APP_URL=https://moneywealth-ai.vercel.app
 ```
 
 For real outbound mail to **any** address, verify a domain in Resend and set
@@ -122,7 +122,7 @@ Restart both servers. Sign in at `/login` (email only — no password field).
 AUTH_MODE=magic_link
 MAIL_TRANSPORT=resend
 MAIL_FROM=MoneyWealth AI <no-reply@yourdomain.com>
-WEB_APP_URL=https://moneywealth-omega.vercel.app
+WEB_APP_URL=https://moneywealth-ai.vercel.app
 MAGIC_LINK_TTL_MINUTES=15
 ```
 
@@ -133,7 +133,7 @@ MAGIC_LINK_TTL_MINUTES=15
 ```env
 NEXT_PUBLIC_AUTH_MODE=magic_link
 API_BASE_URL=<your backend URL>
-NEXT_PUBLIC_APP_URL=https://moneywealth-omega.vercel.app
+NEXT_PUBLIC_APP_URL=https://moneywealth-ai.vercel.app
 ```
 
 ---

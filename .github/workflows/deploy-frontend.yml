@@ -13,8 +13,8 @@ on:
 
 env:
   # Project identifiers (not secrets) for the linked Vercel project.
-  VERCEL_ORG_ID: team_oMIUhcFnScL2THhN5EEG8cfY
-  VERCEL_PROJECT_ID: prj_fq2dcWgcdAtove6DSJ1w7az2odOo
+  VERCEL_ORG_ID: team_o6tuP7oZwfzjOjporncDAwwb
+  VERCEL_PROJECT_ID: prj_xBka2ZNgMAEeZkRvaJetOPJbiGLb
 
 jobs:
   deploy:

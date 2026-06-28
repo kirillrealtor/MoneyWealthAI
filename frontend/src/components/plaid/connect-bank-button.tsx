@@ -7,6 +7,7 @@ import { Landmark, ShieldCheck, Beaker } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCreateLinkToken, useExchangeToken } from "@/lib/api/plaid";
+import { ApiRequestError } from "@/lib/api/client";
 
 /** Opens Plaid Link with a fetched token, exchanges the public_token on success. */
 function Launcher({ token, environment, onClose }: { token: string; environment: string; onClose: () => void }) {
@@ -50,8 +51,12 @@ export function ConnectBankButton({
         setToken(r.link_token);
         setOpenDialog(false);
       },
-      onError: () => {
-        toast.error("Couldn't start bank linking. Please retry.");
+      onError: (err) => {
+        if (err instanceof ApiRequestError && err.status === 403) {
+          toast.error("Verify your email first — check your inbox or resend from Settings.");
+        } else {
+          toast.error("Couldn't start bank linking. Please retry.");
+        }
         setSelectedEnv(null);
       },
     });

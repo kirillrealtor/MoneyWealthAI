@@ -1,4 +1,4 @@
-"""Advisor HTTP routes. Auth-gated and AI-rate-limited (10/min/user)."""
+"""Advisor HTTP routes. Auth-gated."""
 from __future__ import annotations
 
 from uuid import UUID
@@ -24,8 +24,7 @@ from .schemas import (
 router = APIRouter(prefix="/api/v1/advisor", tags=["advisor"])
 
 
-@router.post("/chat", response_model=ChatResponse,
-             dependencies=[Depends(rate_limit("advisor_chat", settings.rate_limit_ai_per_min))])
+@router.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest, request: Request, user: CurrentUser = Depends(require_auth)) -> ChatResponse:
     # Persona + name are user profile; load tenant-scoped.
     async with db.with_tenant(user.tenant_id) as conn:

@@ -86,7 +86,7 @@ async def test_run_turn_grounds_persists_and_accounts(client: httpx.AsyncClient)
             "SELECT tokens FROM token_usage WHERE user_id = $1 AND date = CURRENT_DATE", user_id
         )
     assert [m["role"] for m in msgs] == ["user", "assistant"]
-    assert int(used) == 150  # reserve 5000 then settle (150 - 5000) = net 150
+    assert int(used) == 150
 
 
 class _RaisingProvider:
@@ -96,9 +96,8 @@ class _RaisingProvider:
         raise RuntimeError("provider down")
 
 
-async def test_token_reservation_refunded_when_turn_fails(client: httpx.AsyncClient) -> None:
-    """If the LLM call blows up, the reserved tokens must be refunded — no silent
-    budget drain (net token_usage for the day stays 0)."""
+async def test_failed_turn_does_not_record_usage(client: httpx.AsyncClient) -> None:
+    """If the LLM call blows up, no tokens are recorded for the day."""
     user_id = await _seed_user_with_spending(client)
     with pytest.raises(RuntimeError):
         await run_turn(

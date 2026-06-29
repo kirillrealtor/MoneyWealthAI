@@ -74,7 +74,7 @@ definition; put non-secrets as plain task env.
 |---|---|
 | `ENV` | `production` |
 | `PORT` | `8080` |
-| `WEB_APP_URL` | `https://moneywealth-ai.vercel.app` (verification/reset email links) |
+| `WEB_APP_URL` | `https://zenaiautomation.com/moneywealthai` (verification/reset email links) |
 | `ALLOWED_HOSTS` | the backend's public host (or `*` only if behind a trusted proxy) |
 | `TRUST_ANY_HOST` | `true` **only** if there's no stable hostname (manual path); prefer `false` + a real host behind the ALB |
 | `PLAID_ENV` | `sandbox` or `production` |

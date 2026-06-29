@@ -20,7 +20,7 @@ aurora_max_acu        = 2
 # Leave empty to run HTTP-only (not for production).
 acm_certificate_arn = ""
 
-web_app_url = "https://moneywealth-ai.vercel.app"
+web_app_url = "https://zenaiautomation.com/moneywealthai"
 alert_email = "you@example.com"
 
 # container_image is set by CI per-deploy; leave default to bootstrap from

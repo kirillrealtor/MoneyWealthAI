@@ -103,7 +103,7 @@ variable "acm_certificate_arn" {
 variable "web_app_url" {
   type        = string
   description = "Public URL of the frontend (for email/redirect links + CORS)."
-  default     = "https://moneywealth-ai.vercel.app"
+  default     = "https://zenaiautomation.com/moneywealthai"
 }
 
 variable "alert_email" {

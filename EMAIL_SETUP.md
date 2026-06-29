@@ -65,7 +65,7 @@ Restart backend and frontend. Use `/signup` and `/login`.
 AUTH_MODE=password
 MAIL_TRANSPORT=resend
 MAIL_FROM=MoneyWealth AI <onboarding@resend.dev>
-WEB_APP_URL=https://moneywealth-ai.vercel.app
+WEB_APP_URL=https://zenaiautomation.com/moneywealthai
 ```
 
 **Backend (SSM secret):** `RESEND_API_KEY` → `/moneywealth/RESEND_API_KEY`
@@ -122,7 +122,7 @@ Restart both servers. Sign in at `/login` (email only — no password field).
 AUTH_MODE=magic_link
 MAIL_TRANSPORT=resend
 MAIL_FROM=MoneyWealth AI <no-reply@yourdomain.com>
-WEB_APP_URL=https://moneywealth-ai.vercel.app
+WEB_APP_URL=https://zenaiautomation.com/moneywealthai
 MAGIC_LINK_TTL_MINUTES=15
 ```
 
